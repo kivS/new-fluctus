@@ -769,7 +769,7 @@ h1 small, h2 small, h3 small, h1 .small, h2 .small, h3 .small {
     height: auto;
     z-index: 1;
     overflow: hidden;
-    background-image: url('../images/video_bg.png');
+    background-image: url('/images/video_bg.png');
     background-position: center center;
     background-size: cover;
 

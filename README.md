@@ -15,3 +15,9 @@
 ```bash
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/letsencrypt/live/fluctus.segrob.studio/privkey.pem -out /etc/letsencrypt/live/fluctus.segrob.studio/fullchain.pem
 ```
+
+- Add the local domain in the hosts file(`/etc/hosts`): 
+
+```
+127.0.0.1 fluctus.segrob.local
+```

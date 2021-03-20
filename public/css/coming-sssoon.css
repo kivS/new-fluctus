@@ -765,10 +765,8 @@ h1 small, h2 small, h3 small, h1 .small, h2 .small, h3 .small {
     right: 0px;
     /* min-width: 100%;
     min-height: 100%; */
-    width: 100vw;
-    height: 100vh;
-    object-fit: cover;
-    object-position: top;
+    width: 98vw;
+    height: 98vh;
     filter: brightness(0.8);
     z-index: 1;
     overflow: hidden;

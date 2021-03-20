@@ -763,10 +763,13 @@ h1 small, h2 small, h3 small, h1 .small, h2 .small, h3 .small {
     position: fixed;
     top: 0px;
     right: 0px;
-    min-width: 100%;
-    min-height: 100%;
-    width: auto;
-    height: auto;
+    /* min-width: 100%;
+    min-height: 100%; */
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    object-position: top;
+    filter: brightness(0.8);
     z-index: 1;
     overflow: hidden;
     background-image: url('/images/video_bg.jpg');

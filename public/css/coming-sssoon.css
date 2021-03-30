@@ -760,13 +760,13 @@ h1 small, h2 small, h3 small, h1 .small, h2 .small, h3 .small {
     margin-bottom: 30px;
 }
 #video_background {
-    position: fixed;
+    position: absolute;
     top: 0px;
     right: 0px;
-    /* min-width: 100%;
-    min-height: 100%; */
-    width: 98vw;
-    height: 98vh;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
     filter: brightness(0.8);
     z-index: 1;
     overflow: hidden;
@@ -774,6 +774,9 @@ h1 small, h2 small, h3 small, h1 .small, h2 .small, h3 .small {
     background-position: center center;
     background-size: cover;
 
+}
+.extra-info > *, a{
+    color: white;
 }
 #video_pattern {
     position: fixed;

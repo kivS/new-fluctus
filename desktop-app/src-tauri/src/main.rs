@@ -42,7 +42,7 @@ fn main() {
             app.create_window(
               "new",
 
-              WindowUrl::App("index.html".into()),
+              WindowUrl::App("youtube.html".into()),
 
               |window_builder, webview_attributes| {
                 (window_builder.title("Hello!"), webview_attributes)

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Youtube</title>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0px;
+        }
+
+        .app {
+            width: 100vw;
+            height: 92vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <div id="video_player"></div>
+    </div>
+    <script>
+        // Load the IFrame Player API code asynchronously.
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/player_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        let parsedLocation = new URL(location)
+
+        /**
+         * 
+         * @param {string} v - The ID of the video to play
+         * @param {float} video_currentTime || t  - The time to start the video at
+         * @param {string} list - The list to play from
+        **/
+
+        const videoId = parsedLocation.searchParams.get('v')
+        const videoStartSeconds =  parsedLocation.searchParams.get('video_currentTime') ||  parsedLocation.searchParams.get('t') || 0
+        const videoList = parsedLocation.searchParams.get('list') 
+
+
+        // Youtube video player
+        let player;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('video_player', {
+                height: '100%',
+                width: '100%',
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onError
+                }
+            });
+        }
+
+        // Events
+        function onPlayerReady() {
+            console.log('Youtube Player Ready');
+
+            // disable drag & drop on iframe
+            // _disableDragAndDrop();
+
+            console.log('Starting video at(seconds): ', videoStartSeconds);
+
+            // For playlists
+            if (videoList) {
+
+                player.cuePlaylist({
+                    list: videoList,
+                    /*startSeconds: starting_time,*/
+                    /*// TODO: index breaks the whole fkng thing...
+                    index: parseInt(video_query.index) - 1*/
+                });
+
+
+                // For single videos
+            } else {
+
+                player.cueVideoById({
+                    videoId: videoId,
+                    startSeconds: videoStartSeconds
+                });
+
+            }
+
+            // only single videos while playlist bug is not fixed
+            /*     player.cueVideoById({
+                     videoId: video_query.v,
+                     startSeconds: starting_time
+                 });*/
+
+        }
+
+
+
+        function onError(err) {
+            let youtube_error_code = err.data;
+
+            let error_codes = {
+                '2': 'The request contains an invalid parameter value.',
+                '5': 'error related to the HTML5 player has occurred.',
+                '100': 'The video requested was not found.',
+                '101': 'The owner of the requested video does not allow it to be played in embedded players.',
+                '150': 'The owner of the requested video does not allow it to be played in embedded players.'
+
+            };
+
+            let yotube_error = error_codes[`${youtube_error_code}`] || 'Weird youtube error... no ideia what!';
+
+            if (youtube_error_code) {
+
+                // _log.error(TAG, yotube_error);
+                console.error('kaput: ', yotube_error);
+
+                // go to the next video in playlist if video doesn't play
+                nextVideoTimeout = setTimeout(() => {
+                    if (player.getPlaylistId()) {
+                        console.log('error... trying next video.');
+                        player.nextVideo();
+                        clearTimeout(nextVideoTimeout);
+                    }
+
+                }, 2000)
+
+            } else {
+                // make it crash..
+                // _process_crash();
+            }
+
+
+        }
+
+        function onPlayerStateChange(e) {
+            //console.log(e);
+        }
+
+    </script>
+</body>
+
+</html>

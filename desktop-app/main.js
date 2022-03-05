@@ -1,5 +1,14 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut } = require('electron')
+const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog } = require('electron')
 const path = require('path')
+const { URL } = require('url')
+
+if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient('fluctus', process.execPath, [path.resolve(process.argv[1])])
+    }
+} else {
+    app.setAsDefaultProtocolClient('fluctus')
+}
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -11,6 +20,34 @@ function createWindow() {
     })
 
     win.loadFile('index.html')
+}
+
+function createMediaPlayerWindow(name, options) {
+
+    const win = new BrowserWindow({
+        width: 400,
+        height: 400,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js')
+        }
+    })
+
+    win.loadFile(`${name}.html`, {search: options})
+}
+
+function openMediaPlayer(name, options){
+    switch (name) {
+        case 'youtube':
+            createMediaPlayerWindow(name, options)
+            break;
+        case 'twitch':
+            createMediaPlayerWindow(name, options)
+            break;
+    
+        default:
+            dialog.showErrorBox('Oops!', `${name} is not supported...`)
+            break;
+    }
 }
 
 
@@ -46,6 +83,19 @@ const appMenu = Menu.buildFromTemplate([
 let tray = null;
 
 app.whenReady().then(() => {
+
+    // Handle the protocol. In this case, we choose to show an Error Box.
+    app.on('open-url', (event, url) => {
+        
+        let parsedUrl = new URL(url)
+        
+        const media_name = parsedUrl.hostname
+        const options = parsedUrl.search
+
+        // dialog.showErrorBox('debug!', `options: ${options}`)
+
+        openMediaPlayer(media_name, options)
+    })
 
     // macOS only dock 
     app.dock.setMenu(appMenu)

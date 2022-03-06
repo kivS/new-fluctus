@@ -1,0 +1,8 @@
+node_modules
+temp
+.tmp
+src/scripts/*.js
+dist
+.sass-cache
+.DS_Store
+build

@@ -1,0 +1,18 @@
+{   
+    "compileOnSave": true,
+    "compilerOptions":{
+        "target": "es6",
+        "removeComments": true, 
+        "inlineSourceMap": false,
+        "lib":[
+            "ES6",
+            "DOM"
+        ]
+    },
+    "include":[
+        "src/**/*"
+    ],
+    "exclude":[
+        "node_modules"
+    ]
+}

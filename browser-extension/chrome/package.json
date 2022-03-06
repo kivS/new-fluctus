@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "dev": "yarn tsc --watch"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.179",
+    "typescript": "^4.6.2"
+  }
+}

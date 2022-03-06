@@ -472,7 +472,7 @@ function getMediaProvider(url: string): string | null{
 			let matched_val = url.match(match_exp);
 			console.debug('Match result: ', matched_val);
 
-			return true
+			return matched_val != null;
 		})
 	})
 

@@ -34,7 +34,6 @@ function createMediaPlayerWindow(name, options) {
         center: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
-            nativeWindowOpen: false
         }
     })
 
@@ -64,24 +63,24 @@ function openMediaPlayer(name, options){
 
 // create menu
 const appMenu = Menu.buildFromTemplate([
-    {
-        label: 'Saved list',
-        accelerator: "Alt+Shift+o",
-        click: () => {
-            console.log('clicky poopy')
-            createWindow()
-        }
-    },
-    {
-        type: 'separator',
-    },
-    {
-        label: `Version: ${app.getVersion()}`,
-        click: () => {
-            // shell.openItem(config.RELEASE_PAGE_URL)
-            console.log('hmm')
-        }
-    },
+    // {
+    //     label: 'Saved list',
+    //     accelerator: "Alt+Shift+o",
+    //     click: () => {
+    //         console.log('clicky poopy')
+    //         createWindow()
+    //     }
+    // },
+    // {
+    //     type: 'separator',
+    // },
+    // {
+    //     label: `Version: ${app.getVersion()}`,
+    //     click: () => {
+    //         // shell.openItem(config.RELEASE_PAGE_URL)
+    //         console.log('hmm')
+    //     }
+    // },
     {
         type: 'separator',
     },

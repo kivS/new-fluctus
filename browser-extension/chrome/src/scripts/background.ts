@@ -37,47 +37,48 @@ console.log('Lift off!');
 const NO_SERVER_ERROR_NOTIF_ID = "fluctus_says_nope";
 
 
+
 // On install or upgrade
 chrome.runtime.onInstalled.addListener(() =>{
+	chrome.action.disable();
+
 	// Replace all rules for filtering page depending on content
-	chrome['declarativeContent'].onPageChanged.removeRules(undefined, () => {
+	chrome.declarativeContent.onPageChanged.removeRules(undefined, () => {
 		// With a new rule
-		chrome['declarativeContent'].onPageChanged.addRules([
+		chrome.declarativeContent.onPageChanged.addRules([
 		 	{
-		 		// Youtube Trigger me!!
+		 		
 		 		conditions: [
-		 			// Youtube Trigger me!!
-		 			new chrome['declarativeContent'].PageStateMatcher({
+		 			new chrome.declarativeContent.PageStateMatcher({
 		 				pageUrl: { hostContains: 'youtube',  pathContains: 'watch' }
 		 			}),
 
-					// Vimeo Trigger me!!
-					new chrome['declarativeContent'].PageStateMatcher({
-		 				pageUrl: { hostContains: 'vimeo' },
-		 				css: ['video']
-		 			}),
+					//Vimeo Trigger me!!
+					// new chrome.declarativeContent.PageStateMatcher({
+		 			// 	pageUrl: { hostContains: 'vimeo' },
+		 			// 	css: ['video']
+		 			// }),
 
-	 				// soundcloud Trigger me!!
-					new chrome['declarativeContent'].PageStateMatcher({
-		 				pageUrl: { hostContains: 'soundcloud' },
-		 				css: ['div.waveform__scene']
-		 			}),
+	 				// // soundcloud Trigger me!!
+					// new chrome.declarativeContent.PageStateMatcher({
+		 			// 	pageUrl: { hostContains: 'soundcloud' },
+		 			// 	css: ['div.waveform__scene']
+		 			// }),
 
-		 			// Twitch Trigger me!!
-					new chrome['declarativeContent'].PageStateMatcher({
-		 				pageUrl: { urlMatches: 'https://go.twitch.tv/[a-zA-Z0-9_]{4,25}$' },
+		 			// // Twitch Trigger me!!
+					// new chrome.declarativeContent.PageStateMatcher({
+		 			// 	pageUrl: { urlMatches: 'https://go.twitch.tv/[a-zA-Z0-9_]{4,25}$' },
 		 				
-		 			}),
-		 			new chrome['declarativeContent'].PageStateMatcher({
-		 				pageUrl: { urlMatches: String.raw`https://go.twitch.tv/videos/\d+$` },
+		 			// }),
+		 			// new chrome.declarativeContent.PageStateMatcher({
+		 			// 	pageUrl: { urlMatches: String.raw`https://go.twitch.tv/videos/\d+$` },
 		 				
-		 			})
+		 			// })
 		 		],
 
 		 		// Shows the page_action
 		 		actions: [
-		 			new chrome['declarativeContent'].ShowAction()
-
+		 			new chrome.declarativeContent.ShowAction(),
 		 		]
 		 	}
 		]);
@@ -97,21 +98,21 @@ chrome.runtime.onInstalled.addListener(() =>{
 			// For dirty urls like in google search results..dirty..
 			`https://*/*${encodeURIComponent('www.youtube.com/watch')}*`,
 
-			// VIMEO
-			'https://*.vimeo.com/*',
-			// For dirty urls like in google search results..dirty..
-			`https://*/*${encodeURIComponent('vimeo')}*`,
+			// // VIMEO
+			// 'https://*.vimeo.com/*',
+			// // For dirty urls like in google search results..dirty..
+			// `https://*/*${encodeURIComponent('vimeo')}*`,
 
-			// SOUNDCLOUD
-			'https://*.soundcloud.com/*',
-			// For dirty urls like in google search results..dirty..
-			`https://*/*${encodeURIComponent('soundcloud')}*`,
+			// // SOUNDCLOUD
+			// 'https://*.soundcloud.com/*',
+			// // For dirty urls like in google search results..dirty..
+			// `https://*/*${encodeURIComponent('soundcloud')}*`,
 
-			// TWITCH
-			'https://go.twitch.tv/videos/*',
-			'https://go.twitch.tv/*',
-			// For dirty urls like in google search results..dirty..
-			`https://*/*${encodeURIComponent('twitch')}*`,
+			// // TWITCH
+			// 'https://go.twitch.tv/videos/*',
+			// 'https://go.twitch.tv/*',
+			// // For dirty urls like in google search results..dirty..
+			// `https://*/*${encodeURIComponent('twitch')}*`,
 		]
 	});
 
@@ -191,7 +192,7 @@ chrome.contextMenus.onClicked.addListener((object_info, tab) =>{
 	console.debug('hostname: ', hostname);
 
 	if (!hostname) {
-		alertUser("", chrome.i18n.getMessage('mediaProviderNotSupportedError'));
+		// alertUser("", chrome.i18n.getMessage('mediaProviderNotSupportedError'));
 		console.error('No hostname found for url:', url);
 		return
 	}
@@ -263,7 +264,7 @@ function getMediaProvider(url: string): string | null{
 function alertUser(notification_id, message){
     chrome.notifications.create(notification_id, {
        "type": "basic",
-       "iconUrl": chrome.extension.getURL("icons/icon-64.png"),
+       "iconUrl": "icons/icon-64.png",
        "title": "Fluctus",
        "message": message
 

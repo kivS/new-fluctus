@@ -6,6 +6,7 @@
 
   "icons": {
     "16": "icons/icon-16.png",
+    "38": "icons/icon-38.png",
     "128": "icons/icon-128.png"
   },
 
@@ -14,23 +15,15 @@
   "background": {
     "service_worker": "scripts/background.js"
   },
-  "host_permissions":[
-    "http://localhost/*"
-  ],
+  "host_permissions":[],
   "permissions": [
-    "activeTab",
     "declarativeContent",
     "tabs",
     "contextMenus",
-    "storage",
     "notifications"
   ],
 
   "action": {
-    "default_icon": {
-      "19": "icons/icon-19.png",
-      "38": "icons/icon-38.png"
-    },
     "default_title": "__MSG_titleOnAction__"
   }
 }

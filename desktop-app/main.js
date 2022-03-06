@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog } = require('electron')
+const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog, shell } = require('electron')
 const path = require('path')
 const { URL } = require('url')
 
@@ -26,13 +26,24 @@ function createMediaPlayerWindow(name, options) {
 
     const win = new BrowserWindow({
         width: 400,
-        height: 400,
+        height: 300,
+        minWidth: 400,
+        minHeight: 300,
+        alwaysOnTop: true,
+        title: name,
+        center: true,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(__dirname, 'preload.js'),
+            nativeWindowOpen: false
         }
     })
 
     win.loadFile(`${name}.html`, {search: options})
+
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        shell.openExternal(url);
+        return { action: 'deny' };
+    });
 }
 
 function openMediaPlayer(name, options){

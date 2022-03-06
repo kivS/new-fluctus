@@ -24,24 +24,30 @@
         <div id="video_player"></div>
     </div>
     <script>
+    /**
+     * 
+     * @param {string} v - The ID of the video to play
+     * @param {float} video_currentTime || t  - The time to start the video at
+     * @param {string} list - The list to play from
+    **/
+
+
         // Load the IFrame Player API code asynchronously.
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/player_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
+
         let parsedLocation = new URL(location)
-
-        /**
-         * 
-         * @param {string} v - The ID of the video to play
-         * @param {float} video_currentTime || t  - The time to start the video at
-         * @param {string} list - The list to play from
-        **/
-
-        const videoId = parsedLocation.searchParams.get('v')
-        const videoStartSeconds =  parsedLocation.searchParams.get('video_currentTime') ||  parsedLocation.searchParams.get('t') || 0
-        const videoList = parsedLocation.searchParams.get('list') 
+        console.debug(parsedLocation)
+        let parsedYoutubeUrl = new URL(parsedLocation.searchParams.get("url"))
+        console.debug(parsedYoutubeUrl)
+        
+        const videoTitle = parsedLocation.searchParams.get("title")
+        const videoId = parsedYoutubeUrl.searchParams.get('v')
+        const videoStartSeconds =  parsedYoutubeUrl.searchParams.get('video_currentTime') ||  parsedYoutubeUrl.searchParams.get('t') || 0
+        const videoList = parsedYoutubeUrl.searchParams.get('list') 
 
 
         // Youtube video player

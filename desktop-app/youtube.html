@@ -24,23 +24,29 @@
         <div id="video_player"></div>
     </div>
     <script>
-    /**
-     * 
-     * @param {string} v - The ID of the video to play
-     * @param {float} video_currentTime || t  - The time to start the video at
-     * @param {string} list - The list to play from
-    **/
-
-
         // Load the IFrame Player API code asynchronously.
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/player_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-
-        let parsedLocation = new URL(location)
+        /**
+         * Url with payload from the browser extension counterpart
+         * 
+         * @param {string} url - youtube url
+         * @param {float} video_currentTime - The time to start the video at (in seconds).
+         * @param {string} title - The title of the video 
+        **/
+        let parsedLocation = new URL(location) 
         console.debug(parsedLocation)
+
+        /**
+         * Parsed Youtube url we get directly from youtube, eg: https://www.youtube.com/watch?v=dQw4w9WgXcQ or https://youtu.be/dQw4w9WgXcQ
+         * 
+         * @param {string} v - The ID of the video to play
+         * @param {float} video_currentTime || t  - The time to start the video at
+         * @param {string} list - The list to play from
+        **/
         let parsedYoutubeUrl = new URL(parsedLocation.searchParams.get("url"))
         console.debug(parsedYoutubeUrl)
         

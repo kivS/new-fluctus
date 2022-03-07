@@ -6,7 +6,7 @@ if(app.isPackaged) {
     //
     // Process auto updates
     // 
-    const server = 'fluctus-update-server-bnstepkmj-kivs.vercel.app'
+    const server = 'https://fluctus-update-server.vercel.app/'
     const url = `${server}/update/${process.platform}/${app.getVersion()}`
     autoUpdater.setFeedURL({url})
 

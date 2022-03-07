@@ -104,13 +104,13 @@ const appMenu = Menu.buildFromTemplate([
     // {
     //     type: 'separator',
     // },
-    // {
-    //     label: `Version: ${app.getVersion()}`,
-    //     click: () => {
-    //         // shell.openItem(config.RELEASE_PAGE_URL)
-    //         console.log('hmm')
-    //     }
-    // },
+    {
+        label: `Version: ${app.getVersion()}`,
+        // click: () => {
+        //     shell.openItem(config.RELEASE_PAGE_URL)
+        //     console.log('hmm')
+        // }
+    },
     {
         type: 'separator',
     },

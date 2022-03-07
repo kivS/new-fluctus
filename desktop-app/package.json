@@ -1,7 +1,7 @@
 {
   "name": "fluctus",
   "version": "0.1.0",
-  "description": "Video and music panels in a floating window",
+  "description": "Video and audio media in a floating window",
   "main": "main.js",
   "author": "Vik Borges",
   "license": "MIT",
@@ -24,7 +24,20 @@
   },
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "osxSign": {
+          "identity": "Developer ID Application: Vik Borges (3XHWAYK6RW)",
+          "hardened-runtime": true,
+          "entitlements": "entitlements.plist",
+          "entitlements-inherit": "entitlements.plist",
+          "signature-flags": "library",
+          "gatekeeper-assess": false
+        },
+        "osxNotarize": {
+          "appleId": "v1k@protonmail.com",
+          "appleIdPassword": "avsx-thpu-ttsl-icbb"
+        }
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",

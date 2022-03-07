@@ -16,3 +16,9 @@ npm start
 
 
 ## How to deploy
+
+
+- Run the `make` command to build the application:
+```bash
+npm run make
+```

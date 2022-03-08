@@ -150,7 +150,7 @@ app.whenReady().then(() => {
         createWindow();
     })
 
-    if(!app.isPackaged) {
+    if(app.isPackaged) {
         //
         // Process auto updates
         // 

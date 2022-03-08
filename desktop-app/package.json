@@ -1,6 +1,6 @@
 {
   "name": "fluctus",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "Video and audio media in a floating window",
   "main": "main.js",
   "author": "Vik Borges",

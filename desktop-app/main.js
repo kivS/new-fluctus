@@ -1,9 +1,11 @@
 const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog, shell, autoUpdater } = require('electron')
 const path = require('path')
 const { URL } = require('url')
-const { init } = require('@sentry/electron');
+const Sentry = require('@sentry/electron');
 
-init({ dsn: "https://b2b4cb9edcc54452aa82e10c405d5f29@o481264.ingest.sentry.io/6247765" });
+Sentry.init({
+    dsn: 'https://b2b4cb9edcc54452aa82e10c405d5f29@o481264.ingest.sentry.io/6247765',
+});
 
 
 if(app.isPackaged) {    
@@ -24,7 +26,7 @@ if(app.isPackaged) {
 
     autoUpdater.on('error', message => {
         console.error('There was a problem updating the application')
-        throw message
+        Sentry.captureException(message);
     })
 }
 

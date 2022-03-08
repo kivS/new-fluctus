@@ -17,7 +17,9 @@
     "@electron-forge/maker-rpm": "^6.0.0-beta.63",
     "@electron-forge/maker-squirrel": "^6.0.0-beta.63",
     "@electron-forge/maker-zip": "^6.0.0-beta.63",
-    "electron-nightly": "^19.0.0-nightly.20220209"
+    "@sentry/cli": "^1.73.2",
+    "electron": "^18.0.0-alpha.5",
+    "electron-download": "^4.1.1"
   },
   "dependencies": {
     "@sentry/electron": "^3.0.3",
@@ -29,7 +31,9 @@
         "protocols": [
           {
             "name": "Fluctus Launch Protocol",
-            "schemes": ["fluctus"]
+            "schemes": [
+              "fluctus"
+            ]
           }
         ],
         "osxSign": {
@@ -54,7 +58,9 @@
         },
         {
           "name": "@electron-forge/maker-zip",
-          "platforms": ["darwin"]
+          "platforms": [
+            "darwin"
+          ]
         },
         {
           "name": "@electron-forge/maker-dmg",

@@ -1,5 +1,9 @@
 # Fluctus
-All your media content in a floating box
+Video and audio media in a floating window
+
+## Tooling
+
+- [Vercel update server for electronjs app](https://github.com/kivS/fluctus-update-server)
 
 
 ## Local Dev

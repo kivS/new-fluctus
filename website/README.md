@@ -1,9 +1,5 @@
 # Fluctus
 
-## Tooling
-
-- [Vercel update server for electronjs app](https://github.com/kivS/fluctus-update-server)
-
 
 ## How to handle certificates
 

@@ -20,6 +20,7 @@
     "electron-nightly": "^19.0.0-nightly.20220209"
   },
   "dependencies": {
+    "@sentry/electron": "^3.0.3",
     "electron-squirrel-startup": "^1.0.0"
   },
   "config": {

@@ -1,6 +1,6 @@
 {
   "name": "fluctus",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Video and audio media in a floating window",
   "main": "main.js",
   "author": "Vik Borges",
@@ -26,6 +26,12 @@
   "config": {
     "forge": {
       "packagerConfig": {
+        "protocols": [
+          {
+            "name": "Fluctus Launch Protocol",
+            "schemes": ["fluctus"]
+          }
+        ],
         "osxSign": {
           "identity": "Developer ID Application: Vik Borges (3XHWAYK6RW)",
           "hardened-runtime": true,

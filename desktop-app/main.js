@@ -6,18 +6,8 @@ const { init } = require('@sentry/electron');
 init({ dsn: "https://b2b4cb9edcc54452aa82e10c405d5f29@o481264.ingest.sentry.io/6247765" });
 
 
-if(app.isPackaged) {
-    //
-    // Process auto updates
-    // 
-    const server = 'https://fluctus-update-server.vercel.app/'
-    const url = `${server}/update/${process.platform}/${app.getVersion()}`
-    autoUpdater.setFeedURL({url})
+if(app.isPackaged) {    
 
-    setInterval(() => {
-        autoUpdater.checkForUpdates()
-    }, 60000)
-    
     autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
         const dialogOpts = {
             type: 'info',
@@ -177,8 +167,22 @@ app.whenReady().then(() => {
         createWindow();
     })
 
+    if(app.isPackaged) {
+        //
+        // Process auto updates
+        // 
+        const server = 'https://fluctus-update-server.vercel.app/'
+        const url = `${server}/update/${process.platform}/${app.getVersion()}`
+        autoUpdater.setFeedURL({ url })
+    
+        setInterval(() => {
+            autoUpdater.checkForUpdates()
+        }, 60000)
+    }
+
   
 })
+
 app.on('will-quit', () => {
     console.log('app about to close...');
     // Unregister all shortcuts.

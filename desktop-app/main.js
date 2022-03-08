@@ -158,11 +158,11 @@ app.whenReady().then(() => {
         const url = `${server}/update/${process.platform}/${app.getVersion()}`
         autoUpdater.setFeedURL({ url })
     
-        // setInterval(() => {
-        //     autoUpdater.checkForUpdates()
-        // }, 60000)
+        const timeInterval = 1000 * 60 * 1 // 1 minute
+        setInterval(() => {
+            autoUpdater.checkForUpdates()
+        }, timeInterval)
 
-        autoUpdater.checkForUpdates()
 
         autoUpdater.on('checking-for-update', () => {
             console.log('checking for update')

@@ -2,6 +2,9 @@ const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog, shell, autoUpdat
 const path = require('path')
 const { URL } = require('url')
 const Sentry = require('@sentry/electron');
+const log = require('electron-log');
+
+Object.assign(console, log.functions);
 
 Sentry.init({
     dsn: 'https://b2b4cb9edcc54452aa82e10c405d5f29@o481264.ingest.sentry.io/6247765',
@@ -155,11 +158,26 @@ app.whenReady().then(() => {
         const url = `${server}/update/${process.platform}/${app.getVersion()}`
         autoUpdater.setFeedURL({ url })
     
-        setInterval(() => {
-            autoUpdater.checkForUpdates()
-        }, 60000)
+        // setInterval(() => {
+        //     autoUpdater.checkForUpdates()
+        // }, 60000)
+
+        autoUpdater.checkForUpdates()
+
+        autoUpdater.on('checking-for-update', () => {
+            console.log('checking for update')
+        })
+
+        autoUpdater.on('update-available', () => {
+            console.log('Update is available')
+        })
+
+        autoUpdater.on('update-not-available', () => {
+            console.log('Update is not available')
+        })
 
         autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+            console.log(`Update downloaded: ${releaseName} | ${releaseNotes} | ${event}`)
             const dialogOpts = {
                 type: 'info',
                 buttons: ['Restart', 'Later'],

@@ -150,11 +150,11 @@ app.whenReady().then(() => {
         createWindow();
     })
 
-    if(app.isPackaged) {
+    if(!app.isPackaged) {
         //
         // Process auto updates
         // 
-        const server = 'https://fluctus-update-server.vercel.app/'
+        const server = 'https://fluctus-update-server.vercel.app'
         const url = `${server}/update/${process.platform}/${app.getVersion()}`
         autoUpdater.setFeedURL({ url })
     

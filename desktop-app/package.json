@@ -1,6 +1,6 @@
 {
   "name": "fluctus",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "Video and audio media in a floating window",
   "main": "main.js",
   "author": "Vik Borges",
@@ -29,6 +29,11 @@
   "config": {
     "forge": {
       "packagerConfig": {
+        "name": "Fluctus",
+        "executableName": "fluctus",
+        "icon": "images/icons/icon.icns",
+        "appBundleId": "software.kiv.fluctus",
+        "appCategoryType": "public.app-category.utilities",
         "protocols": [
           {
             "name": "Fluctus Launch Protocol",

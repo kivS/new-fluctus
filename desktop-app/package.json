@@ -8,7 +8,10 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "package-mac-x64": "electron-forge package --platform=darwin --arch=x64",
+    "make": "electron-forge make",
+    "make-mac-x64": "electron-forge make --platform=darwin --arch=x64",
+    "publish": "electron-forge publish"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.63",
@@ -17,6 +20,7 @@
     "@electron-forge/maker-rpm": "^6.0.0-beta.63",
     "@electron-forge/maker-squirrel": "^6.0.0-beta.63",
     "@electron-forge/maker-zip": "^6.0.0-beta.63",
+    "@electron-forge/publisher-github": "^6.0.0-beta.63",
     "@sentry/cli": "^1.73.2",
     "electron": "^18.0.0-alpha.5",
     "electron-download": "^4.1.1"
@@ -81,6 +85,19 @@
         {
           "name": "@electron-forge/maker-rpm",
           "config": {}
+        }
+      ],
+      "publishers": [
+        {
+          "name": "@electron-forge/publisher-github",
+          "config": {
+            "repository": {
+              "owner": "kivs",
+              "name": "new-fluctus"
+            },
+            "draft": true,
+            "prerelease": false
+          }
         }
       ]
     }

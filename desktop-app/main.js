@@ -34,7 +34,7 @@ if(app.isPackaged) {
 
     autoUpdater.on('error', message => {
         console.error('There was a problem updating the application')
-        console.error(message)
+        throw message
     })
 }
 
@@ -110,6 +110,15 @@ const appMenu = Menu.buildFromTemplate([
     // {
     //     type: 'separator',
     // },
+    {
+        label: `Force update`,
+        click: () => {
+            autoUpdater.checkForUpdates()
+        }
+    },
+    {
+        type: 'separator',
+    },
     {
         label: `Version: ${app.getVersion()}`,
         // click: () => {

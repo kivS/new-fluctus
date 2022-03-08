@@ -14,8 +14,10 @@ if(app.isPackaged) {
     const url = `${server}/update/${process.platform}/${app.getVersion()}`
     autoUpdater.setFeedURL({url})
 
-    autoUpdater.checkForUpdates() // check for updates every time the app is started
-
+    setInterval(() => {
+        autoUpdater.checkForUpdates()
+    }, 60000)
+    
     autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
         const dialogOpts = {
             type: 'info',

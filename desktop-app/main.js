@@ -85,17 +85,24 @@ const appMenu = Menu.buildFromTemplate([
     // {
     //     type: 'separator',
     // },
-    {
-        label: `Force update`,
-        click: () => {
-            autoUpdater.checkForUpdates()
-        }
-    },
+    // {
+    //     label: `Force update`,
+    //     click: () => {
+    //         autoUpdater.checkForUpdates()
+    //     }
+    // },
+    // {
+    //     label: 'About',
+    //     click: () => {
+    //         shell.openExternal('https://vikborges.com')
+    //     }
+    // },
     {
         type: 'separator',
     },
     {
         label: `Version: ${app.getVersion()}`,
+        enabled: false
         // click: () => {
         //     shell.openItem(config.RELEASE_PAGE_URL)
         //     console.log('hmm')

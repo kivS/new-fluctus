@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "dev": "yarn tsc --watch"
+    "dev": "yarn tsc --watch",
+    "build": "./build.py"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.179",

@@ -192,7 +192,7 @@ chrome.contextMenus.onClicked.addListener((object_info, tab) =>{
 	console.debug('hostname: ', hostname);
 
 	if (!hostname) {
-		// alertUser("", chrome.i18n.getMessage('mediaProviderNotSupportedError'));
+		alertUser("", chrome.i18n.getMessage('mediaProviderNotSupportedError'));
 		console.error('No hostname found for url:', url);
 		return
 	}
@@ -214,11 +214,11 @@ chrome.contextMenus.onClicked.addListener((object_info, tab) =>{
 chrome.notifications.onClicked.addListener(notif =>{
     console.log('notification clicked:', notif);
 
-    switch (notif) {
-        case NO_SERVER_ERROR_NOTIF_ID:
-            chrome.tabs.create({ url: config.NATIVE_APP_INSTALL_URL });
-            break;        
-    }
+    // switch (notif) {
+    //     case NO_SERVER_ERROR_NOTIF_ID:
+    //         chrome.tabs.create({ url: config.NATIVE_APP_INSTALL_URL });
+    //         break;        
+    // }
 
     // clear notification
     chrome.notifications.clear(notif);
@@ -264,7 +264,7 @@ function getMediaProvider(url: string): string | null{
 function alertUser(notification_id, message){
     chrome.notifications.create(notification_id, {
        "type": "basic",
-       "iconUrl": "icons/icon-64.png",
+	   "iconUrl": chrome.runtime.getURL('icons/icon-64.png'),
        "title": "Fluctus",
        "message": message
 

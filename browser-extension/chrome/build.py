@@ -1,4 +1,4 @@
-#! /usr/bin/python3.6
+#! /usr/bin/python3
 
 ''' Creates a zip file from src folder into a build dir  '''
 

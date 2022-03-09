@@ -12,3 +12,10 @@ yarn install
 ```bash
 yarn dev
 ```
+
+
+## Build for production
+
+```bash
+./build.py
+```

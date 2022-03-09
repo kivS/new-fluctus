@@ -6,9 +6,11 @@ const log = require('electron-log');
 
 Object.assign(console, log.functions);
 
-Sentry.init({
-    dsn: 'https://b2b4cb9edcc54452aa82e10c405d5f29@o481264.ingest.sentry.io/6247765',
-});
+if(app.isPackaged){
+    Sentry.init({
+        dsn: 'https://b2b4cb9edcc54452aa82e10c405d5f29@o481264.ingest.sentry.io/6247765',
+    });
+}
 
 
 if (process.defaultApp) {
@@ -154,14 +156,17 @@ app.whenReady().then(() => {
         //
         // Process auto updates
         // 
-        const server = 'https://fluctus-update-server.vercel.app'
-        const url = `${server}/update/${process.platform}/${app.getVersion()}`
+        const server = 'http://localhost:3000'
+        const url = `${server}/update/${process.platform}_${process.arch}/${app.getVersion()}`
+        console.log(`Checking for updates at ${url}`)
         autoUpdater.setFeedURL({ url })
+
+        autoUpdater.checkForUpdates()
     
-        const timeInterval = 1000 * 60 * 1 // 1 minute
-        setInterval(() => {
-            autoUpdater.checkForUpdates()
-        }, timeInterval)
+        // const timeInterval = 1000 * 60 * 1 // 1 minute
+        // setInterval(() => {
+        //     autoUpdater.checkForUpdates()
+        // }, timeInterval)
 
 
         autoUpdater.on('checking-for-update', () => {
@@ -192,7 +197,7 @@ app.whenReady().then(() => {
         })
 
         autoUpdater.on('error', message => {
-            console.error('There was a problem updating the application')
+            console.error(`There was a problem updating the application: ${message}`)
             Sentry.captureException(message);
         })
     }

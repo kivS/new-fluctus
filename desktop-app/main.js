@@ -156,7 +156,7 @@ app.whenReady().then(() => {
         //
         // Process auto updates
         // 
-        const server = 'fluctus-update-server.vercel.app'
+        const server = 'https://fluctus-update-server.vercel.app'
         const url = `${server}/update/${process.platform}_${process.arch}/${app.getVersion()}`
         console.log(`Checking for updates at ${url}`)
         autoUpdater.setFeedURL({ url })
@@ -165,6 +165,7 @@ app.whenReady().then(() => {
         
         const timeInterval = 24 * 60 * 1000 * 60  // check again every 24 hours
         setInterval(() => {
+            // console.log('Time for the daily updates check!')
             autoUpdater.checkForUpdates()
         }, timeInterval)
 

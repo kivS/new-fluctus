@@ -138,7 +138,7 @@ chrome.action.onClicked.addListener( tab => {
 	console.debug('hostname: ', hostname);
 
 	if(!hostname){
-		alertUser("", chrome.i18n.getMessage('mediaProviderNotSupportedError'));
+		alertUser("", chrome.i18n.getMessage('urlNotSupportedError'));
 		console.error('No hostname found for url:', tab.url);
 		return
 	}
@@ -192,7 +192,7 @@ chrome.contextMenus.onClicked.addListener((object_info, tab) =>{
 	console.debug('hostname: ', hostname);
 
 	if (!hostname) {
-		alertUser("", chrome.i18n.getMessage('mediaProviderNotSupportedError'));
+		alertUser("", chrome.i18n.getMessage('urlNotSupportedError'));
 		console.error('No hostname found for url:', url);
 		return
 	}

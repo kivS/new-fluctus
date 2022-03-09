@@ -8,7 +8,7 @@
     "description": "Tooltip for button"
   },
   "appDescription": {
-    "message": "Open videos and audio from Youtube, Soundcloud, Twitch and more in a floating window",
+    "message": "Open video and audio media in a floating window",
     "description": "The description of the application"
   },
    "titleOnAction": {

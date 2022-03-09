@@ -165,7 +165,7 @@ app.whenReady().then(() => {
         
         const timeInterval = 24 * 60 * 1000 * 60  // check again every 24 hours
         setInterval(() => {
-            // console.log('Time for the daily updates check!')
+            console.log('Time for the daily updates check!')
             autoUpdater.checkForUpdates()
         }, timeInterval)
 

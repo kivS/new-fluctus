@@ -26,3 +26,17 @@ npm start
 ```bash
 npm run make
 ```
+
+## Publishing the app to GitHub
+
+- First we publish a draft to Github
+
+    ```bash
+    npm run publish 
+    ```
+
+- Then we publish the release on Github with a new semantic version
+
+    ```bash
+    npm run release
+    ```

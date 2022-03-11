@@ -8,9 +8,9 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "package-mac-x64": "electron-forge package --platform=darwin --arch=x64",
+    "package-mac": "electron-forge package --platform=darwin --arch=x64; electron-forge package --platform=darwin --arch=arm64",
     "make": "electron-forge make",
-    "make-mac-x64": "electron-forge make --platform=darwin --arch=x64",
+    "make-mac": "electron-forge make --platform=darwin --arch=x64; electron-forge make --platform=darwin --arch=arm64",
     "publish": "electron-forge publish"
   },
   "devDependencies": {

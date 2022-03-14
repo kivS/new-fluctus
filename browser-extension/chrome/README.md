@@ -1,5 +1,7 @@
 # Chrome web extension
 
+- [Chrome Store - Fluctus](https://chrome.google.com/webstore/detail/fluctus/abfbcbdniaapbldlehinlnepcfdolcfb)
+
 
 ## Dev
 

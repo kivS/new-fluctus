@@ -87,8 +87,10 @@ chrome.runtime.onInstalled.addListener(() =>{
 	// Add contextMenus
 	chrome.contextMenus.create({
 		id: 'contextMenu_1',
-		title: chrome.i18n.getMessage("titleOnAction"),
-		contexts: ['link', 'selection'],
+		// title: chrome.i18n.getMessage("titleOnAction"),
+		title: 'Float me..', // TODO: replace with i18n once chrome bug is fixed
+		// contexts: ['link', 'selection'],
+		contexts: ['all'],
 		targetUrlPatterns: [
 			// YOUTUBE
 			// For clean urls links like in youtube page and etc
@@ -138,7 +140,8 @@ chrome.action.onClicked.addListener( tab => {
 	console.debug('hostname: ', hostname);
 
 	if(!hostname){
-		alertUser("", chrome.i18n.getMessage('urlNotSupportedError'));
+		// alertUser("", chrome.i18n.getMessage('urlNotSupportedError'));
+		alertUser("", 'This url is not supported'); // TODO: replace with i18n once chrome bug is fixed
 		console.error('No hostname found for url:', tab.url);
 		return
 	}
@@ -192,7 +195,8 @@ chrome.contextMenus.onClicked.addListener((object_info, tab) =>{
 	console.debug('hostname: ', hostname);
 
 	if (!hostname) {
-		alertUser("", chrome.i18n.getMessage('urlNotSupportedError'));
+		// alertUser("", chrome.i18n.getMessage('urlNotSupportedError'));
+		alertUser("", 'This url is not supported'); // TODO: replace with i18n once chrome bug is fixed
 		console.error('No hostname found for url:', url);
 		return
 	}

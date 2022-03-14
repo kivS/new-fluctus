@@ -8,7 +8,7 @@ import glob
 
 APP_NAME = 'Fluctus'
 BUILD_DIR = 'build'
-FILE_EXT_TO_IGNORE = ('.ts',)
+FILE_EXT_TO_IGNORE = ('.ts', '.DS_Store')
 
 if not(os.path.exists(f'{BUILD_DIR}')):
     print('Creating build directory..\n')

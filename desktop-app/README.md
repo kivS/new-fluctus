@@ -27,7 +27,7 @@ npm start
 npm run make
 ```
 
-## Publishing the app to GitHub
+## Publishing the app to GitHub and deploying to updates
 
 We're only interested in the zip file for auto-update purposes, so it's important to be in the release.
 The different arch builds(x64, arm) can be uploaded manually for now.

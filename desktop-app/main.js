@@ -100,12 +100,12 @@ const appMenu = Menu.buildFromTemplate([
     //         shell.openExternal('https://vikborges.com')
     //     }
     // },
-     {
-        label: 'Test',
-        click: () => {
-            createMediaPlayerWindow('custom_video', 'url=https%3A%2F%2Fimg-9gag-fun.9cache.com%2Fphoto%2FaYrDobO_460svav1.mp4')
-        }
-    },
+    //  {
+    //     label: 'Test',
+    //     click: () => {
+    //         createMediaPlayerWindow('custom_video', 'url=https%3A%2F%2Fimg-9gag-fun.9cache.com%2Fphoto%2FaYrDobO_460svav1.mp4')
+    //     }
+    // },
     {
         type: 'separator',
     },

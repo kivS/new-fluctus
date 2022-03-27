@@ -21,3 +21,7 @@ yarn dev
 ```bash
 ./build.py
 ```
+
+- Submit new package to [Chrome web store](https://chrome.google.com/webstore/devconsole/)
+
+- wait for the approval

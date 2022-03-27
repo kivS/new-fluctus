@@ -64,6 +64,9 @@ function openMediaPlayer(name, options){
         case 'twitch':
             createMediaPlayerWindow(name, options)
             break;
+        case 'raw-mp4':
+            createMediaPlayerWindow('custom_video', options)
+            break
     
         default:
             dialog.showErrorBox('Oops!', `${name} is not supported...`)
@@ -97,6 +100,12 @@ const appMenu = Menu.buildFromTemplate([
     //         shell.openExternal('https://vikborges.com')
     //     }
     // },
+     {
+        label: 'Test',
+        click: () => {
+            createMediaPlayerWindow('custom_video', 'url=https%3A%2F%2Fimg-9gag-fun.9cache.com%2Fphoto%2FaYrDobO_460svav1.mp4')
+        }
+    },
     {
         type: 'separator',
     },

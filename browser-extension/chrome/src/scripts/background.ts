@@ -19,6 +19,11 @@ const config = {
 			'name': 'twitch',
 			'alts': ['twitch', 'go.twitch']
 		},
+		{
+			'name': 'raw-mp4',
+			'alts': ['mp4']
+
+		}
 	],
 	NATIVE_APP_INSTALL_URL: 'https://github.com/kivS/Fluctus/releases',
 	STORAGE_KEY_NATIVE_APP_PORT : 'fd_native_app_port',
@@ -99,6 +104,7 @@ chrome.runtime.onInstalled.addListener(() =>{
 			'https://youtu.be/*',
 			// For dirty urls like in google search results..dirty..
 			`https://*/*${encodeURIComponent('www.youtube.com/watch')}*`,
+
 
 			// // VIMEO
 			// 'https://*.vimeo.com/*',
@@ -189,7 +195,18 @@ chrome.action.onClicked.addListener( tab => {
 chrome.contextMenus.onClicked.addListener((object_info, tab) =>{
 	console.debug('Context Menu cliked: ', object_info);
 
-	let url = object_info.linkUrl || object_info.selectionText;
+	let url = null;
+
+	switch (object_info.mediaType) {
+		case 'video':
+			url = object_info.srcUrl;
+			break;
+	
+		default:
+			url = object_info.linkUrl || object_info.selectionText;
+			break;
+	}
+
 
 	let hostname = getMediaProvider(url);
 	console.debug('hostname: ', hostname);

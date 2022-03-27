@@ -95,33 +95,7 @@ chrome.runtime.onInstalled.addListener(() =>{
 		// title: chrome.i18n.getMessage("titleOnAction"),
 		title: 'Float me..', // TODO: replace with i18n once chrome bug is fixed
 		// contexts: ['link', 'selection'],
-		contexts: ['all'],
-		targetUrlPatterns: [
-			// YOUTUBE
-			// For clean urls links like in youtube page and etc
-			'https://www.youtube.com/watch*',
-			// for short url
-			'https://youtu.be/*',
-			// For dirty urls like in google search results..dirty..
-			`https://*/*${encodeURIComponent('www.youtube.com/watch')}*`,
-
-
-			// // VIMEO
-			// 'https://*.vimeo.com/*',
-			// // For dirty urls like in google search results..dirty..
-			// `https://*/*${encodeURIComponent('vimeo')}*`,
-
-			// // SOUNDCLOUD
-			// 'https://*.soundcloud.com/*',
-			// // For dirty urls like in google search results..dirty..
-			// `https://*/*${encodeURIComponent('soundcloud')}*`,
-
-			// // TWITCH
-			// 'https://go.twitch.tv/videos/*',
-			// 'https://go.twitch.tv/*',
-			// // For dirty urls like in google search results..dirty..
-			// `https://*/*${encodeURIComponent('twitch')}*`,
-		]
+		contexts: ['all']
 	});
 
 

@@ -38,8 +38,6 @@ The different arch builds(x64, arm) can be uploaded manually for now.
     npm run publish 
     ```
 
-- Then we publish the release on Github with a new semantic version
+- Then we edit the draft in the github UI and publish it 
 
-    ```bash
-    npm run release
-    ```
+- After that as soon as our [update server](https://fluctus-update-server.vercel.app/) picks the latest release we should be good to receive the update on our app.

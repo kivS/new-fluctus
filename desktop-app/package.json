@@ -11,7 +11,7 @@
     "package-mac": "electron-forge package --platform=darwin --arch=x64; electron-forge package --platform=darwin --arch=arm64",
     "make": "electron-forge make",
     "make-mac": "electron-forge make --platform=darwin --arch=x64; electron-forge make --platform=darwin --arch=arm64",
-    "publish": "electron-forge publish"
+    "publish-mac": "electron-forge publish --arch=x64; electron-forge publish --arch=arm64"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.63",

@@ -173,7 +173,16 @@ app.whenReady().then(() => {
         // Process auto updates
         // 
         const server = 'https://fluctus-update-server.vercel.app'
-        const url = `${server}/update/${process.platform}_${process.arch}/${app.getVersion()}`
+
+        let url = ''
+
+        if(process.platform === 'darwin' && process.arch === 'arm64') {
+            url = `${server}/update/${process.platform}_arm64/${app.getVersion()}`
+
+        }else{
+            url = `${server}/update/${process.platform}/${app.getVersion()}`
+        }
+
         console.log(`Checking for updates at ${url}`)
         autoUpdater.setFeedURL({ url })
 

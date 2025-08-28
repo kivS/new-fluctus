@@ -1,4 +1,8 @@
 (function() {
+    const api = (typeof browser !== 'undefined') ? browser : (typeof chrome !== 'undefined' ? chrome : null);
+    if (!api) {
+        try { console.error('WebExtension API not found (browser/chrome).'); } catch (e) {}
+    }
     const SUPPORTED_HOSTNAMES = [
         {
             'name': 'youtube',
@@ -34,7 +38,7 @@
         return mediaProvider ? mediaProvider.name : null;
     }
 
-    if (getMediaProvider(window.location.href)) {
-        browser.runtime.sendMessage({ action: "enable_action" });
+    if (api && getMediaProvider(window.location.href)) {
+        api.runtime.sendMessage({ action: "enable_action" });
     }
 })();

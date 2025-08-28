@@ -1,8 +1,9 @@
 {
-  "name": "Fluctus Minimal",
+  "name": "__MSG_appName__",
   "version": "1.0",
   "manifest_version": 3,
-  "description": "Float videos from your favorite websites",
+  "description": "__MSG_appDescription__",
+  "default_locale": "en",
   "icons": {
     "16": "images/icon-16.png",
     "19": "images/icon-19.png",
@@ -25,7 +26,7 @@
     "<all_urls>"
   ],
   "action": {
-    "default_title": "Float me.."
+    "default_title": "__MSG_titleOnAction__"
   },
   "content_scripts": [
     {

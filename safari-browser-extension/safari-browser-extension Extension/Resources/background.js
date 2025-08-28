@@ -1,4 +1,10 @@
 (function() {
+    const api = (typeof browser !== 'undefined') ? browser : (typeof chrome !== 'undefined' ? chrome : null);
+    if (!api) {
+        // Fail fast if no WebExtension API is present
+        console.error('WebExtension API not found (browser/chrome).');
+        return;
+    }
     const config = {
         debug: true,
         FLUCTUS_PROTOCOL: 'fluctus://',
@@ -42,33 +48,37 @@
     const NO_SERVER_ERROR_NOTIF_ID = "fluctus_says_nope";
 
     // On install or upgrade
-    browser.runtime.onInstalled.addListener(() => {
-        browser.action.disable();
+    api.runtime.onInstalled.addListener(() => {
+        if (api.action && typeof api.action.disable === 'function') {
+            try { api.action.disable(); } catch (e) { console.warn('action.disable not available', e); }
+        }
 
         // Add contextMenus
-        browser.contextMenus.create({
+        if (api.contextMenus && typeof api.contextMenus.create === 'function') api.contextMenus.create({
             id: 'contextMenu_1',
-            title: 'Float me..',
+            title: (api.i18n && api.i18n.getMessage("titleOnAction")) || 'Float me..',
             contexts: ['all']
         });
     });
 
     // Listen for messages from content scripts
-    browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    api.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === "enable_action") {
-            browser.action.enable(sender.tab.id);
+            if (api.action && typeof api.action.enable === 'function') {
+                try { api.action.enable(sender.tab.id); } catch (e) { console.warn('action.enable not available', e); }
+            }
         }
     });
 
 
-    browser.action.onClicked.addListener(tab => {
+    api.action.onClicked.addListener(tab => {
         console.log('page_action clicked..', tab);
 
         let hostname = getMediaProvider(tab.url);
         console.log('hostname: ', hostname);
 
         if (!hostname) {
-            alertUser("", 'This url is not supported');
+            alertUser("", (api.i18n && api.i18n.getMessage("urlNotSupportedError")) || 'This url is not supported');
             console.error('No hostname found for url:', tab.url);
             return
         }
@@ -80,7 +90,7 @@
         console.log('payload', payload.toString());
 
         try {
-            browser.tabs.update(tab.id, { url: payload.toString() });
+            api.tabs.update(tab.id, { url: payload.toString() });
         } catch (e) {
             console.error("Error updating tab:", e);
         }
@@ -89,7 +99,7 @@
     });
 
 
-    browser.contextMenus.onClicked.addListener((object_info, tab) => {
+    api.contextMenus.onClicked.addListener((object_info, tab) => {
         console.log('Context Menu cliked: ', object_info);
 
         let url = null;
@@ -111,7 +121,7 @@
         console.log('hostname: ', hostname);
 
         if (!hostname) {
-            alertUser("", 'This url is not supported');
+            alertUser("", (api.i18n && api.i18n.getMessage("urlNotSupportedError")) || 'This url is not supported');
             console.error('No hostname found for url:', url);
             return
         }
@@ -122,7 +132,7 @@
         console.log('payload', payload.toString());
 
         try {
-            browser.tabs.update(tab.id, { url: payload.toString() });
+            api.tabs.update(tab.id, { url: payload.toString() });
         } catch (e) {
             console.error("Error updating tab:", e);
         }
@@ -133,11 +143,11 @@
     /**
      * Handle notifications click event
      */
-    browser.notifications.onClicked.addListener(notif => {
+    api.notifications.onClicked.addListener(notif => {
         console.log('notification clicked:', notif);
 
         // clear notification
-        browser.notifications.clear(notif);
+        api.notifications.clear(notif);
     })
 
 
@@ -169,9 +179,9 @@
      * @param  message
      */
     function alertUser(notification_id, message) {
-        browser.notifications.create(notification_id, {
+        api.notifications.create(notification_id, {
             "type": "basic",
-            "iconUrl": browser.runtime.getURL('icons/icon-64.png'),
+            "iconUrl": api.runtime.getURL('images/icon-64.png'),
             "title": "Fluctus",
             "message": message
 
@@ -181,7 +191,7 @@
             if (notif == NO_SERVER_ERROR_NOTIF_ID) return;
 
             const autoClearTimeOut = setTimeout(() => {
-                browser.notifications.clear(notif);
+                api.notifications.clear(notif);
                 clearTimeout(autoClearTimeOut);
             }, 2500)
 

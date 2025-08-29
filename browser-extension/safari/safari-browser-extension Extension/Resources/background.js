@@ -65,7 +65,18 @@
     api.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === "enable_action") {
             if (api.action && typeof api.action.enable === 'function') {
-                try { api.action.enable(sender.tab.id); } catch (e) { console.warn('action.enable not available', e); }
+                try {
+                    // In some browsers sender.tab can be undefined, so fall back
+                    // to enabling the action globally when no tab id is available.
+                    const tabId = sender.tab ? sender.tab.id : undefined;
+                    const enableResult = api.action.enable(tabId);
+                    // Handle promise rejections in browsers that return promises
+                    if (enableResult && typeof enableResult.catch === 'function') {
+                        enableResult.catch(e => console.warn('action.enable rejected', e));
+                    }
+                } catch (e) {
+                    console.warn('action.enable not available', e);
+                }
             }
         }
     });
@@ -90,9 +101,19 @@
         console.log('payload', payload.toString());
 
         try {
-            api.tabs.update(tab.id, { url: payload.toString() });
+            const updateResult = api.tabs.update(tab.id, { url: payload.toString() });
+            if (updateResult && typeof updateResult.catch === 'function') {
+                updateResult.catch(() => {
+                    try { api.tabs.create({ url: payload.toString() }); } catch (createErr) {
+                        console.error('Error creating tab:', createErr);
+                    }
+                });
+            }
         } catch (e) {
             console.error("Error updating tab:", e);
+            try { api.tabs.create({ url: payload.toString() }); } catch (createErr) {
+                console.error('Error creating tab:', createErr);
+            }
         }
 
 
@@ -132,9 +153,19 @@
         console.log('payload', payload.toString());
 
         try {
-            api.tabs.update(tab.id, { url: payload.toString() });
+            const updateResult = api.tabs.update(tab.id, { url: payload.toString() });
+            if (updateResult && typeof updateResult.catch === 'function') {
+                updateResult.catch(() => {
+                    try { api.tabs.create({ url: payload.toString() }); } catch (createErr) {
+                        console.error('Error creating tab:', createErr);
+                    }
+                });
+            }
         } catch (e) {
             console.error("Error updating tab:", e);
+            try { api.tabs.create({ url: payload.toString() }); } catch (createErr) {
+                console.error('Error creating tab:', createErr);
+            }
         }
 
     });

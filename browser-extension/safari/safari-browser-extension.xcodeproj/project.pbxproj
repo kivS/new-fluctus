@@ -87,7 +87,6 @@
 				0AD9F53A2E609674008EDA58 /* Exceptions for "safari-browser-extension Extension" folder in "safari-browser-extension Extension" target */,
 			);
 			explicitFolders = (
-				Resources/_locales,
 				Resources/images,
 			);
 			path = "safari-browser-extension Extension";

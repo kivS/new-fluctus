@@ -1,37 +1,20 @@
 {
-  "name": "__MSG_appName__",
+  "name": "Fluctus",
   "version": "1.0",
+  "description": "A barebones Safari extension.",
   "manifest_version": 3,
-  "description": "__MSG_appDescription__",
-  "default_locale": "en",
   "icons": {
     "16": "images/icon-16.png",
-    "19": "images/icon-19.png",
-    "38": "images/icon-38.png",
     "48": "images/icon-48.png",
-    "64": "images/icon-64.png",
-    "128": "images/icon-128.png",
-    "256": "images/icon-256.png"
+    "128": "images/icon-128.png"
   },
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
-  "permissions": [
-    "tabs",
-    "contextMenus",
-    "notifications",
-    "scripting"
-  ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
   "action": {
-    "default_title": "__MSG_titleOnAction__"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
+    "default_icon": {
+        "16": "images/icon-16.png",
+        "48": "images/icon-48.png"
     }
-  ]
+  }
 }

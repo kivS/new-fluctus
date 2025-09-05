@@ -50,9 +50,12 @@ function openInCurrentTab(tabId, url) {
 function createContextMenus() {
   if (!api || !api.contextMenus || !api.contextMenus.create) return;
   try {
+    const rocket = (typeof String.fromCodePoint === 'function')
+      ? String.fromCodePoint(0x1F680)
+      : '\uD83D\uDE80';
     api.contextMenus.create({
       id: 'fluctus_link_float',
-      title: 'Float me..',
+      title: `${rocket} Float me..`,
       contexts: ['link']
     });
   } catch (e) {

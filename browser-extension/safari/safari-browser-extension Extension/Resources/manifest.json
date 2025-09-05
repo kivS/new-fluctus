@@ -3,6 +3,10 @@
   "version": "1.0",
   "description": "A barebones Safari extension.",
   "manifest_version": 3,
+  "permissions": [
+    "contextMenus",
+    "tabs"
+  ],
   "icons": {
     "16": "images/icon-16.png",
     "48": "images/icon-48.png",

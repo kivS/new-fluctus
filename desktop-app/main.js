@@ -6,11 +6,14 @@ const log = require('electron-log');
 
 Object.assign(console, log.functions);
 
-const APP_REFERRER = 'https://software.kiv.fluctus';
+const APP_REFERRER = 'https://software.kiv.fluctus/';
 const YOUTUBE_URL_FILTER = [
     'https://*.youtube.com/*',
+    'https://*.youtube-nocookie.com/*',
     'https://*.googlevideo.com/*',
-    'https://*.ytimg.com/*'
+    'https://*.ytimg.com/*',
+    'https://yt3.ggpht.com/*',
+    'https://*.gvt1.com/*'
 ];
 
 if(app.isPackaged){
@@ -40,7 +43,8 @@ function createWindow() {
     win.loadFile('index.html')
 }
 
-function createMediaPlayerWindow(name, options) {
+function createMediaPlayerWindow(name, options, remoteContentOptions) {
+    const windowTitle = remoteContentOptions?.windowTitle || name;
 
     const win = new BrowserWindow({
         width: 400,
@@ -48,14 +52,18 @@ function createMediaPlayerWindow(name, options) {
         minWidth: 400,
         minHeight: 300,
         alwaysOnTop: true,
-        title: name,
+        title: windowTitle,
         center: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
         }
     })
 
-    win.loadFile(`${name}.html`, {search: options})
+    if (remoteContentOptions?.url) {
+        win.loadURL(remoteContentOptions.url, remoteContentOptions.loadOptions)
+    } else {
+        win.loadFile(`${name}.html`, {search: options})
+    }
 
     win.webContents.setWindowOpenHandler(({ url }) => {
         shell.openExternal(url);
@@ -66,7 +74,7 @@ function createMediaPlayerWindow(name, options) {
 function openMediaPlayer(name, options){
     switch (name) {
         case 'youtube':
-            createMediaPlayerWindow(name, options)
+            openYoutubePlayer(options)
             break;
         case 'twitch':
             createMediaPlayerWindow(name, options)
@@ -79,6 +87,115 @@ function openMediaPlayer(name, options){
             dialog.showErrorBox('Oops!', `${name} is not supported...`)
             break;
     }
+}
+
+function openYoutubePlayer(options) {
+    const config = buildYoutubeEmbedConfig(options);
+
+    if (config.error) {
+        dialog.showErrorBox('Youtube', config.error);
+        return;
+    }
+
+    createMediaPlayerWindow('youtube', options, config);
+}
+
+function buildYoutubeEmbedConfig(rawSearch) {
+    const params = new URLSearchParams(rawSearch || '');
+    const originalYoutubeUrl = params.get('url');
+
+    if (!originalYoutubeUrl) {
+        return { error: 'No Youtube URL provided.' };
+    }
+
+    let parsedYoutubeUrl;
+    try {
+        parsedYoutubeUrl = new URL(originalYoutubeUrl);
+    } catch (error) {
+        return { error: `Invalid Youtube URL: ${originalYoutubeUrl}` };
+    }
+
+    const videoMeta = extractYoutubeMetadata(parsedYoutubeUrl);
+
+    if (!videoMeta.videoId) {
+        return { error: 'Unable to detect the Youtube video ID.' };
+    }
+
+    const embedUrl = new URL(`https://www.youtube.com/embed/${videoMeta.videoId}`);
+
+    embedUrl.searchParams.set('autoplay', '1');
+    embedUrl.searchParams.set('playsinline', '1');
+    embedUrl.searchParams.set('modestbranding', '1');
+    embedUrl.searchParams.set('rel', '0');
+    embedUrl.searchParams.set('enablejsapi', '1');
+    embedUrl.searchParams.set('widget_referrer', APP_REFERRER);
+
+    if (videoMeta.listId) {
+        embedUrl.searchParams.set('list', videoMeta.listId);
+    }
+
+    if (videoMeta.startSeconds > 0) {
+        embedUrl.searchParams.set('start', `${videoMeta.startSeconds}`);
+    }
+
+    const windowTitle = params.get('title') || 'Youtube';
+
+    return {
+        url: embedUrl.toString(),
+        windowTitle,
+        loadOptions: {
+            httpReferrer: APP_REFERRER
+        }
+    };
+}
+
+function extractYoutubeMetadata(url) {
+    const hostname = url.hostname.replace(/^www\./, '');
+    let videoId = url.searchParams.get('v');
+
+    if (!videoId && hostname === 'youtu.be') {
+        videoId = url.pathname.split('/').filter(Boolean)[0] || null;
+    }
+
+    if (!videoId && url.pathname.startsWith('/shorts/')) {
+        const [, , shortsId] = url.pathname.split('/');
+        videoId = shortsId || null;
+    }
+
+    const listId = url.searchParams.get('list');
+    const startSeconds = parseYoutubeTime(
+        url.searchParams.get('video_currentTime') ||
+        url.searchParams.get('t') ||
+        url.searchParams.get('start')
+    );
+
+    return {
+        videoId,
+        listId,
+        startSeconds
+    };
+}
+
+function parseYoutubeTime(value) {
+    if (!value) return 0;
+
+    const numericValue = Number(value);
+    if (!Number.isNaN(numericValue) && numericValue >= 0) {
+        return Math.floor(numericValue);
+    }
+
+    const pattern = /(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/i;
+    const match = value.match(pattern);
+
+    if (!match) return 0;
+
+    const [, hoursStr, minutesStr, secondsStr] = match;
+
+    const hours = parseInt(hoursStr || '0', 10);
+    const minutes = parseInt(minutesStr || '0', 10);
+    const seconds = parseInt(secondsStr || '0', 10);
+
+    return (hours * 3600) + (minutes * 60) + seconds;
 }
 
 
@@ -137,10 +254,9 @@ let tray = null;
 
 app.whenReady().then(() => {
 
-    // Ensure Youtube embeds receive a Referer/Origin header per the new policy
+    // Ensure Youtube embeds receive an identifying Referer header per the new policy
     session.defaultSession.webRequest.onBeforeSendHeaders({ urls: YOUTUBE_URL_FILTER }, (details, callback) => {
         details.requestHeaders['Referer'] = APP_REFERRER;
-        details.requestHeaders['Origin'] = APP_REFERRER;
         callback({ requestHeaders: details.requestHeaders });
     });
 

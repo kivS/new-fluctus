@@ -1,10 +1,17 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog, shell, autoUpdater } = require('electron')
+const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog, shell, autoUpdater, session } = require('electron')
 const path = require('path')
 const { URL } = require('url')
 const Sentry = require('@sentry/electron');
 const log = require('electron-log');
 
 Object.assign(console, log.functions);
+
+const APP_REFERRER = 'https://software.kiv.fluctus';
+const YOUTUBE_URL_FILTER = [
+    'https://*.youtube.com/*',
+    'https://*.googlevideo.com/*',
+    'https://*.ytimg.com/*'
+];
 
 if(app.isPackaged){
     Sentry.init({
@@ -129,6 +136,13 @@ const appMenu = Menu.buildFromTemplate([
 let tray = null;
 
 app.whenReady().then(() => {
+
+    // Ensure Youtube embeds receive a Referer/Origin header per the new policy
+    session.defaultSession.webRequest.onBeforeSendHeaders({ urls: YOUTUBE_URL_FILTER }, (details, callback) => {
+        details.requestHeaders['Referer'] = APP_REFERRER;
+        details.requestHeaders['Origin'] = APP_REFERRER;
+        callback({ requestHeaders: details.requestHeaders });
+    });
 
     // Handle the protocol. In this case, we choose to show an Error Box.
     app.on('open-url', (event, url) => {

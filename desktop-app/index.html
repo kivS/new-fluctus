@@ -3,17 +3,235 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Hello World!</title>
+    <title>Watch Later</title>
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: #f8f8f8;
+            color: #1f1f1f;
+        }
+
+        .app {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 28px;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 30px;
+        }
+
+        .hint {
+            margin: 0 0 18px;
+            color: #575757;
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        button {
+            border: 1px solid #b8b8b8;
+            background: white;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #f3f3f3;
+        }
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 10px;
+        }
+
+        li {
+            border: 1px solid #d4d4d4;
+            border-radius: 10px;
+            background: white;
+            padding: 12px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .meta {
+            margin: 4px 0 0;
+            font-size: 12px;
+            color: #5e5e5e;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .danger {
+            border-color: #d7aaaa;
+            color: #9d2323;
+        }
+
+        .empty {
+            border: 1px dashed #bdbdbd;
+            border-radius: 10px;
+            padding: 18px;
+            color: #4d4d4d;
+            background: #fcfcfc;
+        }
+    </style>
 </head>
 
-<body style="background: white;">
-    <h1>Hello World!</h1>
-    <p>
-        We are using Node.js <span id="node-version"></span>,
-        Chromium <span id="chrome-version"></span>,
-        and Electron <span id="electron-version"></span>.
-    </p>
+<body>
+    <main class="app">
+        <h1>Watch Later</h1>
+        <p class="hint">Use <strong>Alt+Shift+S</strong> while a player window is focused to save it. Use <strong>Alt+Shift+O</strong> to open this list.</p>
+        <div class="toolbar">
+            <button id="refresh-btn" type="button">Refresh</button>
+        </div>
+        <div id="empty-state" class="empty" hidden>No saved videos yet.</div>
+        <ul id="watch-later-list"></ul>
+    </main>
+    <script>
+        const listElement = document.getElementById('watch-later-list');
+        const emptyStateElement = document.getElementById('empty-state');
+        const refreshButton = document.getElementById('refresh-btn');
+
+        function buildSavedAtLabel(savedAt) {
+            const savedDate = new Date(savedAt);
+            if (Number.isNaN(savedDate.getTime())) {
+                return 'Saved recently';
+            }
+
+            return `Saved ${savedDate.toLocaleString()}`;
+        }
+
+        function clearList() {
+            while (listElement.firstChild) {
+                listElement.removeChild(listElement.firstChild);
+            }
+        }
+
+        function createActionButton(label, action, itemId, className) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = label;
+            button.dataset.action = action;
+            button.dataset.itemId = itemId;
+            if (className) {
+                button.classList.add(className);
+            }
+
+            return button;
+        }
+
+        function createListItem(item) {
+            const listItem = document.createElement('li');
+
+            const row = document.createElement('div');
+            row.className = 'row';
+
+            const info = document.createElement('div');
+
+            const title = document.createElement('p');
+            title.className = 'title';
+            title.textContent = item.title || 'Untitled media';
+
+            const meta = document.createElement('p');
+            meta.className = 'meta';
+            const savedAtLabel = buildSavedAtLabel(item.savedAt);
+            meta.textContent = item.sourceUrl ? `${savedAtLabel} | ${item.sourceUrl}` : savedAtLabel;
+
+            info.appendChild(title);
+            info.appendChild(meta);
+
+            const actions = document.createElement('div');
+            actions.className = 'item-actions';
+            actions.appendChild(createActionButton('Open', 'open', item.id));
+            actions.appendChild(createActionButton('Remove', 'remove', item.id, 'danger'));
+
+            row.appendChild(info);
+            row.appendChild(actions);
+            listItem.appendChild(row);
+
+            return listItem;
+        }
+
+        async function loadWatchLaterList() {
+            if (!window.watchLater?.list) {
+                emptyStateElement.hidden = false;
+                emptyStateElement.textContent = 'Watch Later APIs are unavailable.';
+                clearList();
+                return;
+            }
+
+            const items = await window.watchLater.list();
+            clearList();
+
+            if (!items.length) {
+                emptyStateElement.hidden = false;
+                return;
+            }
+
+            emptyStateElement.hidden = true;
+            items.forEach((item) => {
+                listElement.appendChild(createListItem(item));
+            });
+        }
+
+        refreshButton.addEventListener('click', () => {
+            loadWatchLaterList();
+        });
+
+        listElement.addEventListener('click', async (event) => {
+            const button = event.target.closest('button[data-action]');
+            if (!button) return;
+
+            const { action, itemId } = button.dataset;
+            if (!itemId) return;
+
+            if (action === 'open') {
+                await window.watchLater.open(itemId);
+                return;
+            }
+
+            if (action === 'remove') {
+                await window.watchLater.remove(itemId);
+                await loadWatchLaterList();
+            }
+        });
+
+        loadWatchLaterList();
+    </script>
 </body>
 
 </html>

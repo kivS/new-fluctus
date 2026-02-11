@@ -1,4 +1,5 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog, shell, autoUpdater, session } = require('electron')
+const { app, BrowserWindow, Menu, Tray, globalShortcut, dialog, shell, autoUpdater, session, Notification, ipcMain } = require('electron')
+const fs = require('fs')
 const path = require('path')
 const { URL } = require('url')
 const Sentry = require('@sentry/electron');
@@ -15,6 +16,13 @@ const YOUTUBE_URL_FILTER = [
     'https://yt3.ggpht.com/*',
     'https://*.gvt1.com/*'
 ];
+const WATCH_LATER_FILE_NAME = 'watch-later.json';
+const WATCH_LATER_OPEN_SHORTCUT = 'Alt+Shift+O';
+const WATCH_LATER_SAVE_SHORTCUT = 'Alt+Shift+S';
+
+let tray = null;
+let watchLaterWindow = null;
+const mediaPlayerWindowMeta = new Map();
 
 if (app.isPackaged) {
     Sentry.init({
@@ -31,20 +39,195 @@ if (process.defaultApp) {
     app.setAsDefaultProtocolClient('fluctus')
 }
 
-function createWindow() {
-    const win = new BrowserWindow({
-        width: 800,
-        height: 600,
+function openWatchLaterWindow() {
+    if (watchLaterWindow && !watchLaterWindow.isDestroyed()) {
+        watchLaterWindow.focus();
+        return;
+    }
+
+    watchLaterWindow = new BrowserWindow({
+        width: 700,
+        height: 560,
+        minWidth: 500,
+        minHeight: 460,
+        title: 'Watch Later',
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
         }
-    })
+    });
 
-    win.loadFile('index.html')
+    watchLaterWindow.loadFile('index.html');
+    watchLaterWindow.on('closed', () => {
+        watchLaterWindow = null;
+    });
+}
+
+function normalizeOptions(options) {
+    if (!options) return '';
+    if (options.startsWith('?')) return options;
+    return `?${options}`;
+}
+
+function parseMediaInfoFromOptions(options) {
+    const params = new URLSearchParams((options || '').replace(/^\?/, ''));
+    const sourceUrl = params.get('url') || '';
+    const title = params.get('title') || sourceUrl || 'Untitled media';
+
+    return { sourceUrl, title };
+}
+
+function getWatchLaterFilePath() {
+    return path.join(app.getPath('userData'), WATCH_LATER_FILE_NAME);
+}
+
+function readWatchLaterList() {
+    try {
+        const fileContents = fs.readFileSync(getWatchLaterFilePath(), 'utf8');
+        const parsed = JSON.parse(fileContents);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        if (error?.code !== 'ENOENT') {
+            console.error('Unable to read watch later list:', error);
+        }
+
+        return [];
+    }
+}
+
+function writeWatchLaterList(items) {
+    fs.writeFileSync(getWatchLaterFilePath(), JSON.stringify(items, null, 2), 'utf8');
+}
+
+function buildWatchLaterEntry(mediaName, rawOptions) {
+    const options = normalizeOptions(rawOptions);
+    const mediaInfo = parseMediaInfoFromOptions(options);
+    const uniqueSeed = mediaInfo.sourceUrl || options;
+    const id = Buffer.from(`${mediaName}|${uniqueSeed}`).toString('base64url');
+
+    return {
+        id,
+        mediaName,
+        options,
+        title: mediaInfo.title,
+        sourceUrl: mediaInfo.sourceUrl,
+        savedAt: new Date().toISOString()
+    };
+}
+
+function upsertWatchLaterEntry(entry) {
+    const items = readWatchLaterList();
+    const existingEntryIndex = items.findIndex((item) => {
+        if (item.mediaName !== entry.mediaName) return false;
+
+        if (item.sourceUrl && entry.sourceUrl) {
+            return item.sourceUrl === entry.sourceUrl;
+        }
+
+        return item.options === entry.options;
+    });
+
+    if (existingEntryIndex >= 0) {
+        items.splice(existingEntryIndex, 1);
+    }
+
+    items.unshift(entry);
+    writeWatchLaterList(items);
+
+    return {
+        entry,
+        isNew: existingEntryIndex === -1
+    };
+}
+
+function showAppNotification(message) {
+    if (!Notification.isSupported()) {
+        return;
+    }
+
+    new Notification({
+        title: 'Fluctus',
+        body: message
+    }).show();
+}
+
+function saveMediaWindowToWatchLater(windowId) {
+    const metadata = mediaPlayerWindowMeta.get(windowId);
+
+    if (!metadata) {
+        return {
+            ok: false,
+            message: 'Focus a video player window first.'
+        };
+    }
+
+    const result = upsertWatchLaterEntry(buildWatchLaterEntry(metadata.mediaName, metadata.options));
+
+    return {
+        ok: true,
+        isNew: result.isNew,
+        entry: result.entry
+    };
+}
+
+function saveFocusedMediaWindow() {
+    const focusedWindow = BrowserWindow.getFocusedWindow();
+
+    if (!focusedWindow) {
+        return {
+            ok: false,
+            message: 'No focused window found.'
+        };
+    }
+
+    return saveMediaWindowToWatchLater(focusedWindow.id);
+}
+
+function registerWatchLaterIpc() {
+    ipcMain.handle('watch-later:list', () => {
+        return readWatchLaterList();
+    });
+
+    ipcMain.handle('watch-later:open', (_event, itemId) => {
+        const item = readWatchLaterList().find((savedItem) => savedItem.id === itemId);
+        if (!item) return false;
+
+        openMediaPlayer(item.mediaName, item.options);
+        return true;
+    });
+
+    ipcMain.handle('watch-later:remove', (_event, itemId) => {
+        const items = readWatchLaterList();
+        const updatedItems = items.filter((item) => item.id !== itemId);
+        const hasRemovedItem = updatedItems.length !== items.length;
+
+        if (hasRemovedItem) {
+            writeWatchLaterList(updatedItems);
+        }
+
+        return hasRemovedItem;
+    });
+
+    ipcMain.handle('watch-later:save-current', (event) => {
+        const currentWindow = BrowserWindow.fromWebContents(event.sender);
+        if (!currentWindow) {
+            return {
+                ok: false,
+                message: 'Unable to detect current window.'
+            };
+        }
+
+        return saveMediaWindowToWatchLater(currentWindow.id);
+    });
+
+    ipcMain.handle('watch-later:save-focused', () => {
+        return saveFocusedMediaWindow();
+    });
 }
 
 function createMediaPlayerWindow(name, options, remoteContentOptions) {
     const windowTitle = remoteContentOptions?.windowTitle || name;
+    const normalizedOptions = normalizeOptions(options);
+    const mediaName = name === 'custom_video' ? 'raw-mp4' : name;
 
     const win = new BrowserWindow({
         width: 400,
@@ -62,8 +245,18 @@ function createMediaPlayerWindow(name, options, remoteContentOptions) {
     if (remoteContentOptions?.url) {
         win.loadURL(remoteContentOptions.url, remoteContentOptions.loadOptions)
     } else {
-        win.loadFile(`${name}.html`, { search: options })
+        win.loadFile(`${name}.html`, { search: normalizedOptions })
     }
+
+    const windowId = win.id;
+    mediaPlayerWindowMeta.set(windowId, {
+        mediaName,
+        options: normalizedOptions
+    });
+
+    win.on('closed', () => {
+        mediaPlayerWindowMeta.delete(windowId);
+    });
 
     win.webContents.setWindowOpenHandler(({ url }) => {
         shell.openExternal(url);
@@ -201,35 +394,26 @@ function parseYoutubeTime(value) {
 
 // create menu
 const appMenu = Menu.buildFromTemplate([
-    // {
-    //     label: 'Saved list',
-    //     accelerator: "Alt+Shift+o",
-    //     click: () => {
-    //         console.log('clicky poopy')
-    //         createWindow()
-    //     }
-    // },
-    // {
-    //     type: 'separator',
-    // },
-    // {
-    //     label: `Force update`,
-    //     click: () => {
-    //         autoUpdater.checkForUpdates()
-    //     }
-    // },
-    // {
-    //     label: 'About',
-    //     click: () => {
-    //         shell.openExternal('https://vikborges.com')
-    //     }
-    // },
-    //  {
-    //     label: 'Test',
-    //     click: () => {
-    //         createMediaPlayerWindow('custom_video', 'url=https%3A%2F%2Fimg-9gag-fun.9cache.com%2Fphoto%2FaYrDobO_460svav1.mp4')
-    //     }
-    // },
+    {
+        label: 'Watch Later',
+        accelerator: WATCH_LATER_OPEN_SHORTCUT,
+        click: () => {
+            openWatchLaterWindow();
+        }
+    },
+    {
+        label: 'Save Focused Video',
+        accelerator: WATCH_LATER_SAVE_SHORTCUT,
+        click: () => {
+            const saveResult = saveFocusedMediaWindow();
+            if (saveResult.ok) {
+                const actionWord = saveResult.isNew ? 'Saved' : 'Updated';
+                showAppNotification(`${actionWord} to Watch Later: ${saveResult.entry.title}`);
+            } else {
+                showAppNotification(saveResult.message);
+            }
+        }
+    },
     {
         type: 'separator',
     },
@@ -250,9 +434,8 @@ const appMenu = Menu.buildFromTemplate([
     }
 ]);
 
-let tray = null;
-
 app.whenReady().then(() => {
+    registerWatchLaterIpc();
 
     // Ensure Youtube embeds receive an identifying Referer header per the new policy
     session.defaultSession.webRequest.onBeforeSendHeaders({ urls: YOUTUBE_URL_FILTER }, (details, callback) => {
@@ -273,8 +456,10 @@ app.whenReady().then(() => {
         openMediaPlayer(media_name, options)
     })
 
-    // macOS only dock 
-    app.dock.setMenu(appMenu)
+    // macOS only dock
+    if (app.dock) {
+        app.dock.setMenu(appMenu)
+    }
 
     // Set Tray icon
     tray = new Tray(`${__dirname}/images/icons/19x19.png`);
@@ -293,9 +478,19 @@ app.whenReady().then(() => {
     })
 
     // open saved list
-    globalShortcut.register('Alt+Shift+o', () => {
+    globalShortcut.register(WATCH_LATER_OPEN_SHORTCUT, () => {
         console.log('Opening saved list..')
-        createWindow();
+        openWatchLaterWindow();
+    })
+
+    globalShortcut.register(WATCH_LATER_SAVE_SHORTCUT, () => {
+        const saveResult = saveFocusedMediaWindow();
+        if (saveResult.ok) {
+            const actionWord = saveResult.isNew ? 'Saved' : 'Updated';
+            showAppNotification(`${actionWord} to Watch Later: ${saveResult.entry.title}`);
+        } else {
+            showAppNotification(saveResult.message);
+        }
     })
 
     // if(app.isPackaged) {

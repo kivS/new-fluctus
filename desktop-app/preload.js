@@ -1,3 +1,13 @@
+const { contextBridge, ipcRenderer } = require('electron')
+
+contextBridge.exposeInMainWorld('watchLater', {
+    list: () => ipcRenderer.invoke('watch-later:list'),
+    open: (id) => ipcRenderer.invoke('watch-later:open', id),
+    remove: (id) => ipcRenderer.invoke('watch-later:remove', id),
+    saveCurrent: () => ipcRenderer.invoke('watch-later:save-current'),
+    saveFocused: () => ipcRenderer.invoke('watch-later:save-focused')
+})
+
 window.addEventListener('DOMContentLoaded', () => {
     const replaceText = (selector, text) => {
         const element = document.getElementById(selector)

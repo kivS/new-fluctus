@@ -16,7 +16,7 @@ const YOUTUBE_URL_FILTER = [
     'https://*.gvt1.com/*'
 ];
 
-if(app.isPackaged){
+if (app.isPackaged) {
     Sentry.init({
         dsn: 'https://b2b4cb9edcc54452aa82e10c405d5f29@o481264.ingest.sentry.io/6247765',
     });
@@ -62,7 +62,7 @@ function createMediaPlayerWindow(name, options, remoteContentOptions) {
     if (remoteContentOptions?.url) {
         win.loadURL(remoteContentOptions.url, remoteContentOptions.loadOptions)
     } else {
-        win.loadFile(`${name}.html`, {search: options})
+        win.loadFile(`${name}.html`, { search: options })
     }
 
     win.webContents.setWindowOpenHandler(({ url }) => {
@@ -71,7 +71,7 @@ function createMediaPlayerWindow(name, options, remoteContentOptions) {
     });
 }
 
-function openMediaPlayer(name, options){
+function openMediaPlayer(name, options) {
     switch (name) {
         case 'youtube':
             openYoutubePlayer(options)
@@ -82,7 +82,7 @@ function openMediaPlayer(name, options){
         case 'raw-mp4':
             createMediaPlayerWindow('custom_video', options)
             break
-    
+
         default:
             dialog.showErrorBox('Oops!', `${name} is not supported...`)
             break;
@@ -262,9 +262,9 @@ app.whenReady().then(() => {
 
     // Handle the protocol. In this case, we choose to show an Error Box.
     app.on('open-url', (event, url) => {
-        
+
         let parsedUrl = new URL(url)
-        
+
         const media_name = parsedUrl.hostname
         const options = parsedUrl.search
 
@@ -275,7 +275,7 @@ app.whenReady().then(() => {
 
     // macOS only dock 
     app.dock.setMenu(appMenu)
-   
+
     // Set Tray icon
     tray = new Tray(`${__dirname}/images/icons/19x19.png`);
     tray.setToolTip('Fluctus is waiting..');
@@ -298,67 +298,67 @@ app.whenReady().then(() => {
         createWindow();
     })
 
-    if(app.isPackaged) {
-        //
-        // Process auto updates
-        // 
-        const server = 'https://fluctus-update-server.vercel.app'
+    // if(app.isPackaged) {
+    //     //
+    //     // Process auto updates
+    //     // 
+    //     const server = 'https://fluctus-update-server.vercel.app'
 
-        let url = ''
+    //     let url = ''
 
-        if(process.platform === 'darwin' && process.arch === 'arm64') {
-            url = `${server}/update/${process.platform}_arm64/${app.getVersion()}`
+    //     if(process.platform === 'darwin' && process.arch === 'arm64') {
+    //         url = `${server}/update/${process.platform}_arm64/${app.getVersion()}`
 
-        }else{
-            url = `${server}/update/${process.platform}/${app.getVersion()}`
-        }
+    //     }else{
+    //         url = `${server}/update/${process.platform}/${app.getVersion()}`
+    //     }
 
-        console.log(`Checking for updates at ${url}`)
-        autoUpdater.setFeedURL({ url })
+    //     console.log(`Checking for updates at ${url}`)
+    //     autoUpdater.setFeedURL({ url })
 
-        autoUpdater.checkForUpdates() // on boot let's see if there's updates
-        
-        const timeInterval = 24 * 60 * 1000 * 60  // check again every 24 hours
-        setInterval(() => {
-            console.log('Time for the daily updates check!')
-            autoUpdater.checkForUpdates()
-        }, timeInterval)
+    //     autoUpdater.checkForUpdates() // on boot let's see if there's updates
+
+    //     const timeInterval = 24 * 60 * 1000 * 60  // check again every 24 hours
+    //     setInterval(() => {
+    //         console.log('Time for the daily updates check!')
+    //         autoUpdater.checkForUpdates()
+    //     }, timeInterval)
 
 
-        autoUpdater.on('checking-for-update', () => {
-            console.log('checking for update')
-        })
+    //     autoUpdater.on('checking-for-update', () => {
+    //         console.log('checking for update')
+    //     })
 
-        autoUpdater.on('update-available', () => {
-            console.log('Update is available')
-        })
+    //     autoUpdater.on('update-available', () => {
+    //         console.log('Update is available')
+    //     })
 
-        autoUpdater.on('update-not-available', () => {
-            console.log('Update is not available')
-        })
+    //     autoUpdater.on('update-not-available', () => {
+    //         console.log('Update is not available')
+    //     })
 
-        autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-            console.log(`Update downloaded: ${releaseName} | ${releaseNotes} | ${event}`)
-            const dialogOpts = {
-                type: 'info',
-                buttons: ['Restart', 'Later'],
-                title: 'Application Update',
-                message: process.platform === 'win32' ? releaseNotes : releaseName,
-                detail: 'A new version has been downloaded. Restart the application to apply the updates.'
-            }
+    //     autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+    //         console.log(`Update downloaded: ${releaseName} | ${releaseNotes} | ${event}`)
+    //         const dialogOpts = {
+    //             type: 'info',
+    //             buttons: ['Restart', 'Later'],
+    //             title: 'Application Update',
+    //             message: process.platform === 'win32' ? releaseNotes : releaseName,
+    //             detail: 'A new version has been downloaded. Restart the application to apply the updates.'
+    //         }
 
-            dialog.showMessageBox(dialogOpts).then((returnValue) => {
-                if (returnValue.response === 0) autoUpdater.quitAndInstall()
-            })
-        })
+    //         dialog.showMessageBox(dialogOpts).then((returnValue) => {
+    //             if (returnValue.response === 0) autoUpdater.quitAndInstall()
+    //         })
+    //     })
 
-        autoUpdater.on('error', message => {
-            console.error(`There was a problem updating the application: ${message}`)
-            Sentry.captureException(message);
-        })
-    }
+    //     autoUpdater.on('error', message => {
+    //         console.error(`There was a problem updating the application: ${message}`)
+    //         Sentry.captureException(message);
+    //     })
+    // }
 
-  
+
 })
 
 app.on('will-quit', () => {

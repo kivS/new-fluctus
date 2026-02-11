@@ -53,10 +53,6 @@
           "entitlements-inherit": "entitlements.plist",
           "signature-flags": "library",
           "gatekeeper-assess": false
-        },
-        "osxNotarize": {
-          "appleId": "v1k@protonmail.com",
-          "appleIdPassword": "avsx-thpu-ttsl-icbb"
         }
       },
       "makers": [

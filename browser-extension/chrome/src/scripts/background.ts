@@ -177,10 +177,16 @@ chrome.contextMenus.onClicked.addListener((object_info, tab) =>{
 			break;
 	
 		default:
-			url = object_info.linkUrl || object_info.selectionText;
+			url = object_info.linkUrl || object_info.selectionText || object_info.pageUrl || tab?.url;
 			break;
 	}
 
+
+	if (!url) {
+		alertUser("", 'This url is not supported'); // TODO: replace with i18n once chrome bug is fixed
+		console.error('No url found for context menu click:', object_info);
+		return;
+	}
 
 	let hostname = getMediaProvider(url);
 	console.debug('hostname: ', hostname);
@@ -194,6 +200,7 @@ chrome.contextMenus.onClicked.addListener((object_info, tab) =>{
 
 	let payload = new URL(`${config.FLUCTUS_PROTOCOL}${hostname}`);
 	payload.searchParams.set('url', url);
+	if (tab?.title && tab.url === url) payload.searchParams.set('title', tab.title);
 	
 	console.debug('payload', payload);
 

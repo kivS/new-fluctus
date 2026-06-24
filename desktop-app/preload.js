@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('watchLater', {
     list: () => ipcRenderer.invoke('watch-later:list'),
+    backfillYoutubeTitles: () => ipcRenderer.invoke('watch-later:backfill-youtube-titles'),
     open: (id) => ipcRenderer.invoke('watch-later:open', id),
     remove: (id) => ipcRenderer.invoke('watch-later:remove', id),
     saveCurrent: () => ipcRenderer.invoke('watch-later:save-current'),

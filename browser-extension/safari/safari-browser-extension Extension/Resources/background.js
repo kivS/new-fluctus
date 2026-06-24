@@ -74,13 +74,14 @@ createContextMenus();
 if (api && api.contextMenus && api.contextMenus.onClicked) {
   api.contextMenus.onClicked.addListener((info, tab) => {
     if (!tab || !tab.id) return;
-    const linkUrl = info.linkUrl || '';
+    const linkUrl = info.linkUrl || info.pageUrl || tab.url || '';
     const provider = getMediaProvider(linkUrl);
     if (!provider) {
       console.error('Unsupported link URL for Fluctus:', linkUrl);
       return;
     }
-    const newUrl = buildFluctusUrl(provider, linkUrl);
+    const title = tab.title && tab.url === linkUrl ? tab.title : null;
+    const newUrl = buildFluctusUrl(provider, linkUrl, title);
     openInCurrentTab(tab.id, newUrl);
   });
 }

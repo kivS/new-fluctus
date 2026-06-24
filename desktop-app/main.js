@@ -19,10 +19,12 @@ const YOUTUBE_URL_FILTER = [
 const WATCH_LATER_FILE_NAME = 'watch-later.json';
 const WATCH_LATER_OPEN_SHORTCUT = 'Alt+Shift+O';
 const WATCH_LATER_SAVE_SHORTCUT = 'Alt+Shift+S';
+const GENERIC_YOUTUBE_TITLES = new Set(['youtube', 'youtube - youtube']);
 
 let tray = null;
 let watchLaterWindow = null;
 const mediaPlayerWindowMeta = new Map();
+let watchLaterTitleBackfillPromise = null;
 
 if (app.isPackaged) {
     Sentry.init({
@@ -76,6 +78,20 @@ function parseMediaInfoFromOptions(options) {
     return { sourceUrl, title };
 }
 
+function isGenericYoutubeTitle(title) {
+    return GENERIC_YOUTUBE_TITLES.has((title || '').trim().toLowerCase());
+}
+
+function shouldResolveYoutubeTitle(mediaName, title) {
+    return mediaName === 'youtube' && (!title || isGenericYoutubeTitle(title));
+}
+
+function updateOptionsTitle(options, title) {
+    const params = new URLSearchParams((options || '').replace(/^\?/, ''));
+    params.set('title', title);
+    return `?${params.toString()}`;
+}
+
 function getWatchLaterFilePath() {
     return path.join(app.getPath('userData'), WATCH_LATER_FILE_NAME);
 }
@@ -98,20 +114,149 @@ function writeWatchLaterList(items) {
     fs.writeFileSync(getWatchLaterFilePath(), JSON.stringify(items, null, 2), 'utf8');
 }
 
-function buildWatchLaterEntry(mediaName, rawOptions) {
+async function buildWatchLaterEntry(mediaName, rawOptions) {
     const options = normalizeOptions(rawOptions);
     const mediaInfo = parseMediaInfoFromOptions(options);
     const uniqueSeed = mediaInfo.sourceUrl || options;
     const id = Buffer.from(`${mediaName}|${uniqueSeed}`).toString('base64url');
+    let title = mediaInfo.title;
+    let entryOptions = options;
+
+    if (shouldResolveYoutubeTitle(mediaName, title) && mediaInfo.sourceUrl) {
+        const resolvedTitle = await resolveYoutubeTitle(mediaInfo.sourceUrl);
+        if (resolvedTitle) {
+            title = resolvedTitle;
+            entryOptions = updateOptionsTitle(options, resolvedTitle);
+        }
+    }
 
     return {
         id,
         mediaName,
-        options,
-        title: mediaInfo.title,
+        options: entryOptions,
+        title,
         sourceUrl: mediaInfo.sourceUrl,
         savedAt: new Date().toISOString()
     };
+}
+
+function resolveYoutubeTitle(sourceUrl) {
+    let parsedYoutubeUrl;
+
+    try {
+        parsedYoutubeUrl = new URL(sourceUrl);
+    } catch (error) {
+        return Promise.resolve(null);
+    }
+
+    const videoMeta = extractYoutubeMetadata(parsedYoutubeUrl);
+    if (!videoMeta.videoId) {
+        return Promise.resolve(null);
+    }
+
+    const canonicalVideoUrl = `https://www.youtube.com/watch?v=${videoMeta.videoId}`;
+    const oembedUrl = new URL('https://www.youtube.com/oembed');
+    oembedUrl.searchParams.set('url', canonicalVideoUrl);
+    oembedUrl.searchParams.set('format', 'json');
+
+    return fetchJson(oembedUrl.toString(), 8000)
+        .then((metadata) => {
+            const title = typeof metadata?.title === 'string' ? metadata.title.trim() : '';
+            return title || null;
+        })
+        .catch((error) => {
+            console.warn(`Unable to resolve Youtube title for ${canonicalVideoUrl}:`, error.message || error);
+            return null;
+        });
+}
+
+function fetchJson(url, timeoutMs) {
+    const https = require('https');
+
+    return new Promise((resolve, reject) => {
+        const request = https.get(url, {
+            headers: {
+                'User-Agent': `Fluctus/${app.getVersion()}`
+            }
+        }, (response) => {
+            let responseBody = '';
+
+            response.setEncoding('utf8');
+            response.on('data', (chunk) => {
+                responseBody += chunk;
+            });
+            response.on('end', () => {
+                if (response.statusCode < 200 || response.statusCode >= 300) {
+                    reject(new Error(`Request failed with status ${response.statusCode}`));
+                    return;
+                }
+
+                try {
+                    resolve(JSON.parse(responseBody));
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        });
+
+        request.setTimeout(timeoutMs, () => {
+            request.destroy(new Error(`Request timed out after ${timeoutMs}ms`));
+        });
+        request.on('error', reject);
+    });
+}
+
+async function backfillWatchLaterYoutubeTitles() {
+    const items = readWatchLaterList();
+    const candidates = items
+        .map((item) => {
+            if (item.mediaName !== 'youtube') return null;
+
+            const mediaInfo = parseMediaInfoFromOptions(item.options);
+            const title = item.title || mediaInfo.title;
+
+            if (!shouldResolveYoutubeTitle(item.mediaName, title) || !mediaInfo.sourceUrl) {
+                return null;
+            }
+
+            return { item, mediaInfo };
+        })
+        .filter(Boolean);
+
+    const results = await Promise.all(candidates.map(async ({ item, mediaInfo }) => ({
+        item,
+        mediaInfo,
+        resolvedTitle: await resolveYoutubeTitle(mediaInfo.sourceUrl)
+    })));
+
+    let changed = false;
+    results.forEach(({ item, mediaInfo, resolvedTitle }) => {
+        if (!resolvedTitle) return;
+
+        item.title = resolvedTitle;
+        item.options = updateOptionsTitle(item.options, resolvedTitle);
+        item.sourceUrl = item.sourceUrl || mediaInfo.sourceUrl;
+        changed = true;
+    });
+
+    if (changed) {
+        writeWatchLaterList(items);
+    }
+
+    return items;
+}
+
+function backfillWatchLaterTitlesOnce() {
+    if (!watchLaterTitleBackfillPromise) {
+        watchLaterTitleBackfillPromise = backfillWatchLaterYoutubeTitles()
+            .catch((error) => {
+                watchLaterTitleBackfillPromise = null;
+                console.error('Unable to backfill Watch Later titles:', error);
+                throw error;
+            });
+    }
+
+    return watchLaterTitleBackfillPromise;
 }
 
 function upsertWatchLaterEntry(entry) {
@@ -150,7 +295,7 @@ function showAppNotification(message) {
     }).show();
 }
 
-function saveMediaWindowToWatchLater(windowId) {
+async function saveMediaWindowToWatchLater(windowId) {
     const metadata = mediaPlayerWindowMeta.get(windowId);
 
     if (!metadata) {
@@ -160,7 +305,8 @@ function saveMediaWindowToWatchLater(windowId) {
         };
     }
 
-    const result = upsertWatchLaterEntry(buildWatchLaterEntry(metadata.mediaName, metadata.options));
+    const entry = await buildWatchLaterEntry(metadata.mediaName, metadata.options);
+    const result = upsertWatchLaterEntry(entry);
 
     return {
         ok: true,
@@ -169,7 +315,7 @@ function saveMediaWindowToWatchLater(windowId) {
     };
 }
 
-function saveFocusedMediaWindow() {
+async function saveFocusedMediaWindow() {
     const focusedWindow = BrowserWindow.getFocusedWindow();
 
     if (!focusedWindow) {
@@ -183,7 +329,8 @@ function saveFocusedMediaWindow() {
 }
 
 function registerWatchLaterIpc() {
-    ipcMain.handle('watch-later:list', () => {
+    ipcMain.handle('watch-later:list', async () => {
+        await backfillWatchLaterTitlesOnce();
         return readWatchLaterList();
     });
 
@@ -207,7 +354,7 @@ function registerWatchLaterIpc() {
         return hasRemovedItem;
     });
 
-    ipcMain.handle('watch-later:save-current', (event) => {
+    ipcMain.handle('watch-later:save-current', async (event) => {
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
         if (!currentWindow) {
             return {
@@ -219,7 +366,7 @@ function registerWatchLaterIpc() {
         return saveMediaWindowToWatchLater(currentWindow.id);
     });
 
-    ipcMain.handle('watch-later:save-focused', () => {
+    ipcMain.handle('watch-later:save-focused', async () => {
         return saveFocusedMediaWindow();
     });
 }
@@ -262,6 +409,8 @@ function createMediaPlayerWindow(name, options, remoteContentOptions) {
         shell.openExternal(url);
         return { action: 'deny' };
     });
+
+    return win;
 }
 
 function openMediaPlayer(name, options) {
@@ -290,7 +439,20 @@ function openYoutubePlayer(options) {
         return;
     }
 
-    createMediaPlayerWindow('youtube', options, config);
+    const win = createMediaPlayerWindow('youtube', options, config);
+    const mediaInfo = parseMediaInfoFromOptions(normalizeOptions(options));
+
+    if (shouldResolveYoutubeTitle('youtube', mediaInfo.title) && mediaInfo.sourceUrl) {
+        resolveYoutubeTitle(mediaInfo.sourceUrl).then((resolvedTitle) => {
+            if (!resolvedTitle || win.isDestroyed()) return;
+
+            win.setTitle(resolvedTitle);
+            const metadata = mediaPlayerWindowMeta.get(win.id);
+            if (metadata) {
+                metadata.options = updateOptionsTitle(metadata.options, resolvedTitle);
+            }
+        });
+    }
 }
 
 function buildYoutubeEmbedConfig(rawSearch) {
@@ -404,8 +566,8 @@ const appMenu = Menu.buildFromTemplate([
     {
         label: 'Save Focused Video',
         accelerator: WATCH_LATER_SAVE_SHORTCUT,
-        click: () => {
-            const saveResult = saveFocusedMediaWindow();
+        click: async () => {
+            const saveResult = await saveFocusedMediaWindow();
             if (saveResult.ok) {
                 const actionWord = saveResult.isNew ? 'Saved' : 'Updated';
                 showAppNotification(`${actionWord} to Watch Later: ${saveResult.entry.title}`);
@@ -436,6 +598,7 @@ const appMenu = Menu.buildFromTemplate([
 
 app.whenReady().then(() => {
     registerWatchLaterIpc();
+    backfillWatchLaterTitlesOnce().catch(() => {});
 
     // Ensure Youtube embeds receive an identifying Referer header per the new policy
     session.defaultSession.webRequest.onBeforeSendHeaders({ urls: YOUTUBE_URL_FILTER }, (details, callback) => {
@@ -483,8 +646,8 @@ app.whenReady().then(() => {
         openWatchLaterWindow();
     })
 
-    globalShortcut.register(WATCH_LATER_SAVE_SHORTCUT, () => {
-        const saveResult = saveFocusedMediaWindow();
+    globalShortcut.register(WATCH_LATER_SAVE_SHORTCUT, async () => {
+        const saveResult = await saveFocusedMediaWindow();
         if (saveResult.ok) {
             const actionWord = saveResult.isNew ? 'Saved' : 'Updated';
             showAppNotification(`${actionWord} to Watch Later: ${saveResult.entry.title}`);

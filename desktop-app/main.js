@@ -82,8 +82,38 @@ function isGenericYoutubeTitle(title) {
     return GENERIC_YOUTUBE_TITLES.has((title || '').trim().toLowerCase());
 }
 
-function shouldResolveYoutubeTitle(mediaName, title) {
-    return mediaName === 'youtube' && (!title || isGenericYoutubeTitle(title));
+function isYoutubeVideoUrl(value) {
+    if (!value) return false;
+
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(value);
+    } catch (error) {
+        return false;
+    }
+
+    const hostname = parsedUrl.hostname.replace(/^www\./, '');
+    const isYoutubeHost = hostname === 'youtube.com' ||
+        hostname === 'm.youtube.com' ||
+        hostname === 'youtu.be' ||
+        hostname.endsWith('.youtube.com');
+
+    return isYoutubeHost && Boolean(extractYoutubeMetadata(parsedUrl).videoId);
+}
+
+function getYoutubeTitleLookupUrl(title, sourceUrl) {
+    if (sourceUrl) return sourceUrl;
+    if (isYoutubeVideoUrl(title)) return title;
+    return '';
+}
+
+function shouldResolveYoutubeTitle(mediaName, title, lookupUrl) {
+    if (mediaName !== 'youtube' || !lookupUrl) return false;
+
+    return !title ||
+        isGenericYoutubeTitle(title) ||
+        title === lookupUrl ||
+        isYoutubeVideoUrl(title);
 }
 
 function updateOptionsTitle(options, title) {
@@ -122,8 +152,9 @@ async function buildWatchLaterEntry(mediaName, rawOptions) {
     let title = mediaInfo.title;
     let entryOptions = options;
 
-    if (shouldResolveYoutubeTitle(mediaName, title) && mediaInfo.sourceUrl) {
-        const resolvedTitle = await resolveYoutubeTitle(mediaInfo.sourceUrl);
+    const lookupUrl = getYoutubeTitleLookupUrl(title, mediaInfo.sourceUrl);
+    if (shouldResolveYoutubeTitle(mediaName, title, lookupUrl)) {
+        const resolvedTitle = await resolveYoutubeTitle(lookupUrl);
         if (resolvedTitle) {
             title = resolvedTitle;
             entryOptions = updateOptionsTitle(options, resolvedTitle);
@@ -214,36 +245,42 @@ async function backfillWatchLaterYoutubeTitles() {
 
             const mediaInfo = parseMediaInfoFromOptions(item.options);
             const title = item.title || mediaInfo.title;
+            const lookupUrl = getYoutubeTitleLookupUrl(title, item.sourceUrl || mediaInfo.sourceUrl);
 
-            if (!shouldResolveYoutubeTitle(item.mediaName, title) || !mediaInfo.sourceUrl) {
+            if (!shouldResolveYoutubeTitle(item.mediaName, title, lookupUrl)) {
                 return null;
             }
 
-            return { item, mediaInfo };
+            return { item, mediaInfo, lookupUrl };
         })
         .filter(Boolean);
 
-    const results = await Promise.all(candidates.map(async ({ item, mediaInfo }) => ({
+    const results = await Promise.all(candidates.map(async ({ item, mediaInfo, lookupUrl }) => ({
         item,
         mediaInfo,
-        resolvedTitle: await resolveYoutubeTitle(mediaInfo.sourceUrl)
+        lookupUrl,
+        resolvedTitle: await resolveYoutubeTitle(lookupUrl)
     })));
 
-    let changed = false;
+    let updatedCount = 0;
     results.forEach(({ item, mediaInfo, resolvedTitle }) => {
         if (!resolvedTitle) return;
 
         item.title = resolvedTitle;
         item.options = updateOptionsTitle(item.options, resolvedTitle);
-        item.sourceUrl = item.sourceUrl || mediaInfo.sourceUrl;
-        changed = true;
+        item.sourceUrl = item.sourceUrl || mediaInfo.sourceUrl || lookupUrl;
+        updatedCount += 1;
     });
 
-    if (changed) {
+    if (updatedCount > 0) {
         writeWatchLaterList(items);
     }
 
-    return items;
+    return {
+        checkedCount: candidates.length,
+        updatedCount,
+        failedCount: candidates.length - updatedCount
+    };
 }
 
 function backfillWatchLaterTitlesOnce() {
@@ -332,6 +369,10 @@ function registerWatchLaterIpc() {
     ipcMain.handle('watch-later:list', async () => {
         await backfillWatchLaterTitlesOnce();
         return readWatchLaterList();
+    });
+
+    ipcMain.handle('watch-later:backfill-youtube-titles', () => {
+        return backfillWatchLaterYoutubeTitles();
     });
 
     ipcMain.handle('watch-later:open', (_event, itemId) => {
@@ -441,9 +482,10 @@ function openYoutubePlayer(options) {
 
     const win = createMediaPlayerWindow('youtube', options, config);
     const mediaInfo = parseMediaInfoFromOptions(normalizeOptions(options));
+    const lookupUrl = getYoutubeTitleLookupUrl(mediaInfo.title, mediaInfo.sourceUrl);
 
-    if (shouldResolveYoutubeTitle('youtube', mediaInfo.title) && mediaInfo.sourceUrl) {
-        resolveYoutubeTitle(mediaInfo.sourceUrl).then((resolvedTitle) => {
+    if (shouldResolveYoutubeTitle('youtube', mediaInfo.title, lookupUrl)) {
+        resolveYoutubeTitle(lookupUrl).then((resolvedTitle) => {
             if (!resolvedTitle || win.isDestroyed()) return;
 
             win.setTitle(resolvedTitle);

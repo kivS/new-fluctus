@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Build the desktop app for this Mac and replace the copy in /Applications.
+set -euo pipefail
+
+APP_NAME="Fluctus"
+INSTALL_PATH="/Applications/$APP_NAME.app"
+
+cd "$(dirname "$0")/../desktop-app"
+
+case "$(uname -m)" in
+    arm64) ARCH="arm64" ;;
+    x86_64) ARCH="x64" ;;
+    *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+esac
+
+if [ ! -d node_modules ]; then
+    npm install
+fi
+
+echo "Building $APP_NAME for darwin-$ARCH..."
+FLUCTUS_LOCAL_BUILD=1 npx electron-forge package --platform=darwin --arch="$ARCH"
+
+BUILT_APP="out/$APP_NAME-darwin-$ARCH/$APP_NAME.app"
+if [ ! -d "$BUILT_APP" ]; then
+    echo "Build finished but $BUILT_APP was not found." >&2
+    exit 1
+fi
+
+if pgrep -x "$APP_NAME" > /dev/null || pgrep -f "$INSTALL_PATH/Contents/MacOS/" > /dev/null; then
+    echo "Quitting the running $APP_NAME..."
+    osascript -e "tell application \"$APP_NAME\" to quit" || true
+    for _ in {1..20}; do
+        pgrep -f "$INSTALL_PATH/Contents/MacOS/" > /dev/null || break
+        sleep 0.5
+    done
+    pkill -f "$INSTALL_PATH/Contents/MacOS/" || true
+fi
+
+echo "Installing to $INSTALL_PATH..."
+rm -rf "$INSTALL_PATH"
+ditto "$BUILT_APP" "$INSTALL_PATH"
+
+open "$INSTALL_PATH"
+echo "Done."

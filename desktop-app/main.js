@@ -4,6 +4,7 @@ const path = require('path')
 const { URL } = require('url')
 const Sentry = require('@sentry/electron');
 const log = require('electron-log');
+const { discoverCastDevices, castYoutubeVideo } = require('./cast');
 
 Object.assign(console, log.functions);
 
@@ -25,6 +26,7 @@ let tray = null;
 let watchLaterWindow = null;
 const mediaPlayerWindowMeta = new Map();
 let watchLaterTitleBackfillPromise = null;
+const castDevices = new Map();
 
 if (app.isPackaged) {
     Sentry.init({
@@ -412,6 +414,69 @@ function registerWatchLaterIpc() {
     });
 }
 
+function registerCastIpc() {
+    ipcMain.handle('cast:discover', async () => {
+        try {
+            const devices = await discoverCastDevices();
+            castDevices.clear();
+            devices.forEach((device) => castDevices.set(device.id, device));
+
+            return {
+                ok: true,
+                devices: devices.map(({ id, name, model }) => ({ id, name, model }))
+            };
+        } catch (error) {
+            console.error('Unable to search for TVs:', error);
+
+            if (error.code === 'LOCAL_NETWORK_BLOCKED') {
+                return {
+                    ok: false,
+                    message: 'Fluctus needs Local Network access to find TVs. Turn it on in System Settings → Privacy & Security → Local Network, then search again.',
+                    canOpenSettings: true
+                };
+            }
+
+            return { ok: false, message: 'Unable to search for TVs on this network.' };
+        }
+    });
+
+    ipcMain.handle('cast:open-network-settings', () => {
+        return shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork');
+    });
+
+    ipcMain.handle('cast:play', async (event, { deviceId, videoId, currentTime } = {}) => {
+        const device = castDevices.get(deviceId);
+        if (!device) {
+            return { ok: false, message: 'That TV is no longer available. Search again.' };
+        }
+
+        const castVideoId = videoId || getWindowYoutubeVideoId(BrowserWindow.fromWebContents(event.sender));
+        if (!/^[\w-]{11}$/.test(castVideoId || '')) {
+            return { ok: false, message: 'Unable to detect the Youtube video.' };
+        }
+
+        try {
+            await castYoutubeVideo(device, castVideoId, currentTime);
+            return { ok: true, deviceName: device.name };
+        } catch (error) {
+            console.error(`Unable to cast ${castVideoId} to ${device.name}:`, error);
+            return { ok: false, message: error.message || `Unable to cast to ${device.name}.` };
+        }
+    });
+}
+
+function getWindowYoutubeVideoId(win) {
+    const metadata = win && mediaPlayerWindowMeta.get(win.id);
+    if (!metadata || metadata.mediaName !== 'youtube') return null;
+
+    const { sourceUrl } = parseMediaInfoFromOptions(metadata.options);
+    try {
+        return extractYoutubeMetadata(new URL(sourceUrl)).videoId;
+    } catch (error) {
+        return null;
+    }
+}
+
 function createMediaPlayerWindow(name, options, remoteContentOptions) {
     const windowTitle = remoteContentOptions?.windowTitle || name;
     const normalizedOptions = normalizeOptions(options);
@@ -640,6 +705,7 @@ const appMenu = Menu.buildFromTemplate([
 
 app.whenReady().then(() => {
     registerWatchLaterIpc();
+    registerCastIpc();
     backfillWatchLaterTitlesOnce().catch(() => {});
 
     // Ensure Youtube embeds receive an identifying Referer header per the new policy

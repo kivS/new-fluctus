@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Run the desktop app locally.
+set -euo pipefail
+
+cd "$(dirname "$0")/../desktop-app"
+
+if [ ! -d node_modules ]; then
+    npm install
+fi
+
+# Hide harmless macOS sandbox noise that Electron 18 prints on newer macOS
+npm start 2> >(grep -v -E 'sandbox_extension_issue_file|kern.hv_vmm_present' >&2)
